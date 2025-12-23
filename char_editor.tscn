@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://6620avucmmoq"]
+
+[ext_resource type="Script" uid="uid://bvu0pdt0dgphj" path="res://char_editor.gd" id="1_8ujqu"]
+[ext_resource type="PackedScene" uid="uid://csltxy50x7syi" path="res://char.tscn" id="1_del1b"]
+
+[node name="CharEditor" type="Control" unique_id=693606007]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8ujqu")
+
+[node name="OptionsContainer" type="VBoxContainer" parent="." unique_id=103555074]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Char" parent="." unique_id=2077318848 instance=ExtResource("1_del1b")]
+unique_name_in_owner = true
+position = Vector2(620, 498)
+
+[node name="SkinColorButton" type="Button" parent="." unique_id=815060150]
+layout_mode = 0
+offset_left = 572.0
+offset_top = 16.0
+offset_right = 654.0
+offset_bottom = 47.0
+text = "SkinColor"

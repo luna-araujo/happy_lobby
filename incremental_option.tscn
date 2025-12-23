@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://c83twyarpre66"]
+
+[ext_resource type="Script" uid="uid://m2hyyxnsx7or" path="res://incremental_option.gd" id="1_00khj"]
+
+[node name="IncrementalOption" type="HBoxContainer" unique_id=1436264877]
+script = ExtResource("1_00khj")
+
+[node name="TitleLabel" type="Label" parent="." unique_id=119738484]
+layout_mode = 2
+text = "Customization Option"
+
+[node name="MinusButton" type="Button" parent="." unique_id=1565811919]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "-"
+
+[node name="OptionsLabel" type="Label" parent="." unique_id=582264813]
+layout_mode = 2
+text = "00/00"
+
+[node name="PlusButton" type="Button" parent="." unique_id=1010542893]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "+"
