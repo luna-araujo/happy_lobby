@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bvu0pdt0dgphj" path="res://char_editor.gd" id="1_8ujqu"]
 [ext_resource type="PackedScene" uid="uid://csltxy50x7syi" path="res://char.tscn" id="1_del1b"]
+[ext_resource type="PackedScene" uid="uid://dxnd0nkhdmbm2" path="res://char_customize_option.tscn" id="2_6cybl"]
 
 [node name="CharEditor" type="Control" unique_id=693606007]
 layout_mode = 3
@@ -11,12 +12,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_8ujqu")
-
-[node name="OptionsContainer" type="VBoxContainer" parent="." unique_id=103555074]
-unique_name_in_owner = true
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
 
 [node name="Char" parent="." unique_id=2077318848 instance=ExtResource("1_del1b")]
 unique_name_in_owner = true
@@ -29,3 +24,63 @@ offset_top = 16.0
 offset_right = 654.0
 offset_bottom = 47.0
 text = "SkinColor"
+
+[node name="TabContainer" type="TabContainer" parent="." unique_id=2023190382]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 40.0
+current_tab = 1
+
+[node name="Body" type="VBoxContainer" parent="TabContainer" unique_id=103555074]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="UpperBodyOption" parent="TabContainer/Body" unique_id=1436264877 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "UpperBody"
+modified_polygons = Array[String](["Body", "ArmFront", "ArmBack"])
+
+[node name="LegsOption" parent="TabContainer/Body" unique_id=402078630 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Legs"
+modified_polygons = Array[String](["LegFront", "LegBack"])
+
+[node name="FeetOption" parent="TabContainer/Body" unique_id=1209368964 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Feet"
+modified_polygons = Array[String](["FootFront", "FootBack"])
+
+[node name="Face" type="VBoxContainer" parent="TabContainer" unique_id=2027915221]
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="HeadOption" parent="TabContainer/Face" unique_id=237454799 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Head"
+modified_polygons = Array[String](["Head", "Neck"])
+
+[node name="EarsOption" parent="TabContainer/Face" unique_id=787842746 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Ears"
+modified_polygons = Array[String](["Ears"])
+
+[node name="NoseOption" parent="TabContainer/Face" unique_id=857330823 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Nose"
+modified_polygons = Array[String](["Nose"])
+
+[node name="EyesOption" parent="TabContainer/Face" unique_id=2007155135 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Eyes"
+modified_polygons = Array[String](["Eyes", "Pupils"])
+
+[node name="HairFrontOption" parent="TabContainer/Face" unique_id=819205491 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Hair Front"
+modified_polygons = Array[String](["HairFront"])
+
+[node name="HairBackOption" parent="TabContainer/Face" unique_id=1657352051 instance=ExtResource("2_6cybl")]
+layout_mode = 2
+title = "Hair Back"
+modified_polygons = Array[String](["HairBack"])

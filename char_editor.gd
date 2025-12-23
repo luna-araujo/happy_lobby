@@ -5,25 +5,18 @@ static var CHAR_PATH:String = "res://assets/char/"
 
 @onready var option_scene:PackedScene = load("uid://c83twyarpre66")
 
-@onready var options_container:VBoxContainer = %OptionsContainer
 @onready var char:Char = %Char
 
+var char_customization_options:Array[CharCustomizeOption]
+
 func _ready() -> void:
-	populate_options()
+	char_customization_options.assign(get_tree().get_nodes_in_group("char_option"))
+	for option in char_customization_options:
+		option.value_changed.connect(on_char_options_changed.bind(option.modified_polygons))
 
-func populate_options():
-	var polygons:Array[Polygon2D] = char.polygons
-	for poly in polygons:
-		var option:IncrementalOption = option_scene.instantiate()
-		options_container.add_child(option)
-		var options = get_customization_options(poly.name)
-		option.setup(poly.name, options)
-		option.value_changed.connect(on_options_changed.bind(poly.name))
-
-
-func on_options_changed(index:int, option_name:String):
-	char.change_polygon_texture(option_name, get_customization_options(option_name)[index])
-	print("option_changed")
+func on_char_options_changed(index:int, options:Array[String]):
+	for option in options:
+		char.change_polygon_texture(option, get_customization_options(option)[index])
 
 static func get_customization_options(option_name:String) -> Array:
 	var path:String = "%s%s" % [CHAR_PATH, option_name]
