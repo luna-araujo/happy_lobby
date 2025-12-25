@@ -1,11 +1,18 @@
 class_name Char
 extends Node2D
 
+var animation_player:AnimationPlayer 
 var polygons:Array[Polygon2D]
 
 
 func _ready() -> void:
 	$Polygons.get_children().map(func (x): polygons.append(x))
+	animation_player = $AnimationPlayer
+
+func play_anim_once(anim_name:String):
+	animation_player.play(anim_name)
+	await animation_player.animation_finished
+	animation_player.play("idle")
 
 func change_polygon_texture(polygon_name:String,texture_path:String):
 	var poly:Polygon2D = polygons.filter(
@@ -19,3 +26,19 @@ func change_polygon_texture(polygon_name:String,texture_path:String):
 	if !new_texture: printerr("Invalid texture_path"); return
 	
 	poly.texture = new_texture
+
+static func save_customision(char:Char):
+	var save_data = [char.polygons]
+	var json_string:String = JSON.stringify(save_data)
+	var file = FileAccess.open("res://user_char.json", FileAccess.WRITE)
+	file.store_string(json_string)
+
+static func load_customization(char:Char):
+	var json_string = FileAccess.open("user://user_char.json", FileAccess.READ).get_as_text()
+	var json = JSON.new()
+	var error = json.parse(json_string)
+	if error == OK:
+		var data_received = json.data
+		print(data_received) # Prints the array.
+	else:
+		print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())

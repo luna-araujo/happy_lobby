@@ -41,6 +41,11 @@ func setup(name, array):
 func _update_options_label():
 	options_label.text = "%s/%s" % [str(current_index + 1), str(max_index)]
 
+func set_index(idx:int, silent:bool):
+	current_index = idx
+	_update_options_label()
+	if silent: return
+	value_changed.emit(current_index)
 
 func _set_max_index_by_arr_size(arr):
 	if arr is Array:

@@ -17,14 +17,6 @@ script = ExtResource("1_8ujqu")
 unique_name_in_owner = true
 position = Vector2(620, 498)
 
-[node name="SkinColorButton" type="Button" parent="." unique_id=815060150]
-layout_mode = 0
-offset_left = 572.0
-offset_top = 16.0
-offset_right = 654.0
-offset_bottom = 47.0
-text = "SkinColor"
-
 [node name="TabContainer" type="TabContainer" parent="." unique_id=2023190382]
 layout_mode = 0
 offset_right = 8.0
@@ -84,3 +76,21 @@ modified_polygons = Array[String](["HairFront"])
 layout_mode = 2
 title = "Hair Back"
 modified_polygons = Array[String](["HairBack"])
+
+[node name="SaveButton" type="Button" parent="." unique_id=808717624]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 424.0
+offset_top = 5.0
+offset_right = 470.0
+offset_bottom = 36.0
+text = "Save"
+
+[node name="LoadButton" type="Button" parent="." unique_id=881204140]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 424.0
+offset_top = 53.0
+offset_right = 470.0
+offset_bottom = 84.0
+text = "Load"
