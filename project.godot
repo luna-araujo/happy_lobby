@@ -15,6 +15,14 @@ run/main_scene="uid://6620avucmmoq"
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://assets/icon.svg"
 
+[autoload]
+
+NetworkManager="*uid://cgv11lavkyiba"
+
+[debug]
+
+file_logging/enable_file_logging=true
+
 [display]
 
 window/size/viewport_width=1280
@@ -22,7 +30,7 @@ window/size/viewport_height=720
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg")
+enabled=PackedStringArray()
 
 [importer_defaults]
 
@@ -60,3 +68,10 @@ texture={
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
+
+[steam]
+
+initialization/app_id=480
+initialization/initialize_on_startup=false
+initialization/embed_callbacks=false
+multiplayer_peer/max_channels=4
