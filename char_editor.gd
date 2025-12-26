@@ -6,21 +6,29 @@ static var CHAR_PATH:String = "res://assets/char/"
 @onready var option_scene:PackedScene = load("uid://c83twyarpre66")
 
 @onready var char:Char = %Char
-
 @onready var save_button:Button = %SaveButton
 @onready var load_button:Button = %LoadButton
 
 var char_customization_options:Array[CharCustomizeOption]
 
 func _ready() -> void:
+	char.customized.connect(update_options)
+	
 	save_button.pressed.connect(func():
 		Char.save_customision(char))
 	load_button.pressed.connect(func():
 		Char.load_customization(char))
 	
 	char_customization_options.assign(get_tree().get_nodes_in_group("char_option"))
+	setup_options()
+	update_options()
+
+func setup_options():
 	for option in char_customization_options:
 		option.value_changed.connect(on_char_options_changed.bind(option.modified_polygons))
+
+func update_options():
+	for option in char_customization_options:
 		option.set_index(get_customization_index(char,option.modified_polygons[0]),true)
 
 func on_char_options_changed(index:int, options:Array[String]):

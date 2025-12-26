@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://crhnq6ruju0jg" path="res://char_customize_option.gd" id="1_dq35p"]
 
 [node name="CharCustomizeOption" type="HBoxContainer" unique_id=1436264877 groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
 script = ExtResource("1_dq35p")
 
 [node name="TitleLabel" type="Label" parent="." unique_id=119738484]

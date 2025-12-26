@@ -1,1 +1,20 @@
-[["HairBack:<Polygon2D#36289119683>","Neck:<Polygon2D#36305896925>","Ears:<Polygon2D#36322674143>","Head:<Polygon2D#36339451361>","Eyes:<Polygon2D#36356228579>","Pupils:<Polygon2D#36373005797>","Mouth:<Polygon2D#36389783015>","HairFront:<Polygon2D#36406560233>","Nose:<Polygon2D#36423337451>","LegBack:<Polygon2D#36440114669>","FootBack:<Polygon2D#36456891887>","ArmBack:<Polygon2D#36473669105>","LegFront:<Polygon2D#36490446323>","FootFront:<Polygon2D#36507223541>","Body:<Polygon2D#36524000763>","ArmFront:<Polygon2D#36540777980>"]]
+{
+	"textures": {
+		"ArmBack": "res://assets/char/ArmBack/ArmBack_2.png",
+		"ArmFront": "res://assets/char/ArmFront/ArmFront_2.png",
+		"Body": "res://assets/char/Body/Body_2.png",
+		"Ears": "res://assets/char/Ears/Ears_2.png",
+		"Eyes": "res://assets/char/Eyes/Eyes_2.png",
+		"FootBack": "res://assets/char/FootBack/FootBack_2.png",
+		"FootFront": "res://assets/char/FootFront/FootFront_2.png",
+		"HairBack": "res://assets/char/HairBack/HairBack_2.png",
+		"HairFront": "res://assets/char/HairFront/HairFront_2.png",
+		"Head": "res://assets/char/Head/Head_2.png",
+		"LegBack": "res://assets/char/LegBack/LegBack_2.png",
+		"LegFront": "res://assets/char/LegFront/LegFront_2.png",
+		"Mouth": "res://assets/char/Mouth/Mouth_2.png",
+		"Neck": "res://assets/char/Neck/Neck_2.png",
+		"Nose": "res://assets/char/Nose/Nose_2.png",
+		"Pupils": "res://assets/char/Pupils/Pupil_2.png"
+	}
+}

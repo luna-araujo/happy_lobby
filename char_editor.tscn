@@ -21,29 +21,79 @@ position = Vector2(620, 498)
 layout_mode = 0
 offset_right = 8.0
 offset_bottom = 40.0
-current_tab = 1
+current_tab = 0
 
-[node name="Body" type="VBoxContainer" parent="TabContainer" unique_id=103555074]
-visible = false
+[node name="General" type="VBoxContainer" parent="TabContainer" unique_id=1524085281]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="UpperBodyOption" parent="TabContainer/Body" unique_id=1436264877 instance=ExtResource("2_6cybl")]
+[node name="NameOption" type="HBoxContainer" parent="TabContainer/General" unique_id=1436264877]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/NameOption" unique_id=119738484]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name"
+
+[node name="OptionsLabel" type="LineEdit" parent="TabContainer/General/NameOption" unique_id=1641349095]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+placeholder_text = "Input name here"
+
+[node name="SkinToneOption" type="HBoxContainer" parent="TabContainer/General" unique_id=874232403]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/SkinToneOption" unique_id=972632426]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SkinTone"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/SkinToneOption" unique_id=1574333051]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="SkinToneOption2" type="HBoxContainer" parent="TabContainer/General" unique_id=301433518]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/SkinToneOption2" unique_id=1735401106]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Height"
+
+[node name="HSlider" type="HSlider" parent="TabContainer/General/SkinToneOption2" unique_id=36340521]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="TitleLabel2" type="Label" parent="TabContainer/General/SkinToneOption2" unique_id=569956751]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "1.75m"
+horizontal_alignment = 2
+
+[node name="UpperBodyOption" parent="TabContainer/General" unique_id=115421109 instance=ExtResource("2_6cybl")]
 layout_mode = 2
 title = "UpperBody"
 modified_polygons = Array[String](["Body", "ArmFront", "ArmBack"])
 
-[node name="LegsOption" parent="TabContainer/Body" unique_id=402078630 instance=ExtResource("2_6cybl")]
+[node name="LegsOption" parent="TabContainer/General" unique_id=584893702 instance=ExtResource("2_6cybl")]
 layout_mode = 2
 title = "Legs"
 modified_polygons = Array[String](["LegFront", "LegBack"])
 
-[node name="FeetOption" parent="TabContainer/Body" unique_id=1209368964 instance=ExtResource("2_6cybl")]
+[node name="FeetOption" parent="TabContainer/General" unique_id=1336105309 instance=ExtResource("2_6cybl")]
 layout_mode = 2
 title = "Feet"
 modified_polygons = Array[String](["FootFront", "FootBack"])
 
 [node name="Face" type="VBoxContainer" parent="TabContainer" unique_id=2027915221]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
