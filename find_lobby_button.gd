@@ -5,7 +5,9 @@ func _ready() -> void:
 
 func _on_pressed():
 	NetworkManager.lobby.get_lobby_list()
-	Steam.lobby_match_list.connect(_on_lobby_match_list)
+	
+	if not Steam.lobby_match_list.is_connected(_on_lobby_match_list):
+		Steam.lobby_match_list.connect(_on_lobby_match_list)
 
 
 func _on_lobby_match_list(these_lobbies: Array) -> void:

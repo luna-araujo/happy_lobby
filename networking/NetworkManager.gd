@@ -28,7 +28,7 @@ var lobby:Lobby = Lobby.new()
 func _init() -> void:
 	add_child(lobby)
 	
-	var initialize_response: Dictionary = await Steam.steamInitEx( APP_ID, true )
+	var initialize_response: Dictionary = Steam.steamInitEx( APP_ID, true )
 	print("Did Steam initialize?: %s " % initialize_response)
 	
 	app_installed_depots = Steam.getInstalledDepots( APP_ID )
@@ -52,6 +52,7 @@ func _init() -> void:
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
 	if user_id != steam_id: return
+	if steam_image != null: return
 	
 	print("Avatar for local user: %s" % user_id)
 	print("Size: %s" % avatar_size)

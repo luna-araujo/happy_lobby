@@ -15,7 +15,7 @@ func _init() -> void:
 	Steam.lobby_created.connect(_on_lobby_created)
 	#Steam.lobby_data_update.connect(_on_lobby_data_update)
 	#Steam.lobby_invite.connect(_on_lobby_invite)
-	#Steam.lobby_joined.connect(_on_lobby_joined)
+	Steam.lobby_joined.connect(_on_lobby_joined)
 	#Steam.lobby_match_list.connect(_on_lobby_match_list)
 	#Steam.lobby_message.connect(_on_lobby_message)
 	#Steam.persona_state_change.connect(_on_persona_change)
@@ -32,13 +32,31 @@ func join_lobby(this_lobby_id: int) -> void:
 
 	# Make the lobby join request to Steam
 	Steam.joinLobby(this_lobby_id)
+
+
 func create_lobby() -> void:
 	# Make sure a lobby is not already set
 	if lobby_id == 0:
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
-func _on_lobby_created(connect: int, this_lobby_id: int) -> void:
-	if connect == 1:
+func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:
+	# Set the lobby ID
+	lobby_id = lobby
+	print("Joined a lobby: %s" % lobby_id)
+
+	# Retrieve lobby data
+	lobby_data = Steam.getAllLobbyData(lobby_id)
+	print("Lobby Data: %s" % lobby_data)
+
+	# Get the current members of the lobby
+	var num_members: int = Steam.getNumLobbyMembers(lobby_id)
+	for i in range(num_members):
+		var member_steam_id: int = Steam.getLobbyMemberByIndex(lobby_id, i)
+		lobby_members.append(member_steam_id)
+		print("Lobby Member %s: %s" % [i, member_steam_id])
+
+func _on_lobby_created(_connect: int, this_lobby_id: int) -> void:
+	if _connect == 1:
 		# Set the lobby ID
 		lobby_id = this_lobby_id
 		print("Created a lobby: %s" % lobby_id)

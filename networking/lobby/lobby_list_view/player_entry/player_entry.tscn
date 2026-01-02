@@ -6,19 +6,19 @@
 [node name="PlayerEntry" type="HBoxContainer" unique_id=1671070101]
 script = ExtResource("1_af1cb")
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=1264041737]
+[node name="Avatar" type="TextureRect" parent="." unique_id=1264041737]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 texture = ExtResource("1_4xvry")
 expand_mode = 3
 stretch_mode = 4
 
-[node name="Label" type="Label" parent="." unique_id=1029006403]
+[node name="Name" type="Label" parent="." unique_id=1029006403]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "STEAM_NAME"
 
-[node name="Label2" type="Label" parent="." unique_id=304212195]
+[node name="Ping" type="Label" parent="." unique_id=304212195]
 layout_mode = 2
 text = "PING"
 horizontal_alignment = 2
