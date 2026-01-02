@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://ds8o4joided5g"]
+
+[ext_resource type="PackedScene" uid="uid://bp0nxd1m8bwml" path="res://networking/steam_info/steam_info.tscn" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://di684i051im27" path="res://networking/lobby/lobby_list_view/lobby_list_view.tscn" id="2_0xm2m"]
+[ext_resource type="Script" uid="uid://cfloiyh8ohrpl" path="res://find_lobby_button.gd" id="2_h2yge"]
+[ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://create_lobby_button.gd" id="3_1bvp3"]
+
+[node name="Main" type="Control" unique_id=1772155142]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=826420004]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.22365947, 0.16766837, 0.20779534, 1)
+
+[node name="SteamInfo" parent="." unique_id=1469103975 instance=ExtResource("1_ig7tw")]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 275.0
+offset_bottom = 359.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1766106065]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 34.0
+offset_top = -135.0
+offset_right = 186.0
+offset_bottom = -34.0
+grow_vertical = 0
+
+[node name="FindLobbyButton" type="Button" parent="VBoxContainer" unique_id=232632436]
+layout_mode = 2
+text = "Find Lobby"
+script = ExtResource("2_h2yge")
+
+[node name="JoinLobbyButton" type="Button" parent="VBoxContainer" unique_id=552614788]
+layout_mode = 2
+text = "Join Lobby"
+
+[node name="CreateLobbyButton" type="Button" parent="VBoxContainer" unique_id=2109981042]
+layout_mode = 2
+text = "Create Lobby"
+script = ExtResource("3_1bvp3")
+
+[node name="LobbyListView" parent="." unique_id=415710229 instance=ExtResource("2_0xm2m")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -310.0
+offset_top = 8.0
+offset_right = -10.0
+offset_bottom = 408.0
+grow_horizontal = 0
+
+[node name="Lobbies" type="Control" parent="." unique_id=1450077257]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -307.0
+offset_top = -355.0
+offset_right = 307.0
+offset_bottom = 355.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Lobbies" unique_id=1511155106]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="List" type="VBoxContainer" parent="Lobbies/Scroll" unique_id=1761880634]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

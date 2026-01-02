@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://csltxy50x7syi"]
 
-[ext_resource type="Script" uid="uid://delgk2nx4mxd3" path="res://char.gd" id="1_x7jrk"]
+[ext_resource type="Script" uid="uid://delgk2nx4mxd3" path="res://char_editor/char.gd" id="1_x7jrk"]
 [ext_resource type="Texture2D" uid="uid://cs8bpitswssth" path="res://assets/char/HairBack/HairBack_2.png" id="2_x7jrk"]
 [ext_resource type="Texture2D" uid="uid://cpy1l7qufcbut" path="res://assets/char/Neck/Neck_2.png" id="3_lbgpb"]
 [ext_resource type="Texture2D" uid="uid://b0fucu33gcuqt" path="res://assets/char/Head/Head_2.png" id="4_cfrs6"]

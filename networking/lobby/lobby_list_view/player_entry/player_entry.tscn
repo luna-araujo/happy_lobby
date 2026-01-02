@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://s7ra3uqw2vcr"]
+
+[ext_resource type="Texture2D" uid="uid://fgs60qv1cjv8" path="res://assets/icon.svg" id="1_4xvry"]
+[ext_resource type="Script" uid="uid://vlhfdiof02x2" path="res://networking/lobby/lobby_list_view/player_entry/player_entry.gd" id="1_af1cb"]
+
+[node name="PlayerEntry" type="HBoxContainer" unique_id=1671070101]
+script = ExtResource("1_af1cb")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1264041737]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+texture = ExtResource("1_4xvry")
+expand_mode = 3
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="." unique_id=1029006403]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STEAM_NAME"
+
+[node name="Label2" type="Label" parent="." unique_id=304212195]
+layout_mode = 2
+text = "PING"
+horizontal_alignment = 2

@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://bp0nxd1m8bwml"]
+
+[ext_resource type="Script" uid="uid://c3bitbpptysvq" path="res://networking/steam_info/steam_info.gd" id="1_l7ht8"]
+[ext_resource type="Texture2D" uid="uid://fgs60qv1cjv8" path="res://assets/icon.svg" id="2_nj802"]
+
+[node name="SteamInfo" type="PanelContainer" unique_id=1469103975]
+self_modulate = Color(0.94509804, 0.94509804, 0.94509804, 0)
+offset_left = 10.0
+offset_top = 6.0
+offset_right = 285.0
+offset_bottom = 113.0
+script = ExtResource("1_l7ht8")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1063088176]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1952277215]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=761979867]
+layout_mode = 2
+
+[node name="Avatar" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=395694396]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(75, 75)
+layout_mode = 2
+texture = ExtResource("2_nj802")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="SteamName" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=978122710]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STEAM_NAME"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SteamStats" type="RichTextLabel" parent="MarginContainer/VBoxContainer" unique_id=1473657277]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+text = "Steam description"
+fit_content = true

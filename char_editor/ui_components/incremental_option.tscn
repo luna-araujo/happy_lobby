@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c83twyarpre66"]
 
-[ext_resource type="Script" uid="uid://m2hyyxnsx7or" path="res://incremental_option.gd" id="1_00khj"]
+[ext_resource type="Script" uid="uid://m2hyyxnsx7or" path="res://char_editor/ui_components/incremental_option.gd" id="1_00khj"]
 
 [node name="IncrementalOption" type="HBoxContainer" unique_id=1436264877]
 script = ExtResource("1_00khj")

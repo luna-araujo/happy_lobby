@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dxnd0nkhdmbm2"]
 
-[ext_resource type="Script" uid="uid://crhnq6ruju0jg" path="res://char_customize_option.gd" id="1_dq35p"]
+[ext_resource type="Script" uid="uid://crhnq6ruju0jg" path="res://char_editor/ui_components/char_customize_option.gd" id="1_dq35p"]
 
 [node name="CharCustomizeOption" type="HBoxContainer" unique_id=1436264877 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)

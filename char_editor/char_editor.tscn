@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://6620avucmmoq"]
 
-[ext_resource type="Script" uid="uid://bvu0pdt0dgphj" path="res://char_editor.gd" id="1_8ujqu"]
-[ext_resource type="PackedScene" uid="uid://csltxy50x7syi" path="res://char.tscn" id="1_del1b"]
-[ext_resource type="PackedScene" uid="uid://dxnd0nkhdmbm2" path="res://char_customize_option.tscn" id="2_6cybl"]
+[ext_resource type="Script" uid="uid://bvu0pdt0dgphj" path="res://char_editor/char_editor.gd" id="1_8ujqu"]
+[ext_resource type="PackedScene" uid="uid://csltxy50x7syi" path="res://char_editor/char.tscn" id="1_del1b"]
+[ext_resource type="PackedScene" uid="uid://dxnd0nkhdmbm2" path="res://char_editor/ui_components/char_customize_option.tscn" id="2_6cybl"]
 
 [node name="CharEditor" type="Control" unique_id=693606007]
 layout_mode = 3
