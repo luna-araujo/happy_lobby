@@ -8,7 +8,7 @@ var list_Container: VBoxContainer
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	Steam.lobby_joined.connect(_on_lobby_joined)
-	list_Container = $VBoxContainer/PlayerList
+	list_Container = $MarginContainer/VBoxContainer/PlayerList
 
 
 func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:

@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bayb80ou8ulcx"]
+
+[ext_resource type="Script" uid="uid://cwew35wmf78x7" path="res://networking/lobby/lobby_finder_window.gd" id="1_xaiii"]
+
+[node name="LobbyFinderWindow" type="Window" unique_id=945007723]
+transparent_bg = true
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(600, 600)
+script = ExtResource("1_xaiii")
+metadata/_custom_type_script = "uid://cwew35wmf78x7"
+
+[node name="Panel" type="Panel" parent="." unique_id=362863584]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=614032866]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Panel/VBoxContainer" unique_id=1389225154]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="List" type="VBoxContainer" parent="Panel/VBoxContainer/Scroll" unique_id=1429507200]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RefreshButton" type="Button" parent="Panel/VBoxContainer" unique_id=1340798837]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh"

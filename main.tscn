@@ -58,33 +58,10 @@ script = ExtResource("3_1bvp3")
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
-anchor_right = 1.0
+anchor_bottom = 0.0
 offset_left = -310.0
 offset_top = 8.0
 offset_right = -10.0
 offset_bottom = 408.0
 grow_horizontal = 0
-
-[node name="Lobbies" type="Control" parent="." unique_id=1450077257]
-layout_mode = 1
-anchors_preset = 13
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -230.0
-offset_right = 230.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Scroll" type="ScrollContainer" parent="Lobbies" unique_id=1511155106]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="List" type="VBoxContainer" parent="Lobbies/Scroll" unique_id=1761880634]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+grow_vertical = 1

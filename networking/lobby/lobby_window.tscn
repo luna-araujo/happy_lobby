@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://dnfgs1h41psjj"]
+
+[ext_resource type="Script" uid="uid://bfp0uichbq3xj" path="res://networking/lobby/lobby_window.gd" id="1_ayg67"]
+[ext_resource type="PackedScene" uid="uid://di684i051im27" path="res://networking/lobby/lobby_list_view/lobby_list_view.tscn" id="1_koq3c"]
+
+[node name="LobbyWindow" type="Window" unique_id=1157487822]
+transparent_bg = true
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(1000, 600)
+script = ExtResource("1_ayg67")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1921791824]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=74112939]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1384661508]
+layout_mode = 2
+
+[node name="LobbyListView" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=415710229 instance=ExtResource("1_koq3c")]
+layout_mode = 2
+size_flags_horizontal = 1
+
+[node name="Button" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=1063304948]
+layout_mode = 2
+text = "Quit Lobby"
+
+[node name="ChatBox" type="PanelContainer" parent="MarginContainer/HBoxContainer" unique_id=674281940]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/HBoxContainer/ChatBox" unique_id=798133334]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer" unique_id=539806140]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer/VBoxContainer" unique_id=1101694080]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer/VBoxContainer/PanelContainer" unique_id=571148044]
+layout_mode = 2
+text = "User: message"
+vertical_alignment = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer/VBoxContainer" unique_id=1500952240]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1413772765]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="MarginContainer/HBoxContainer/ChatBox/MarginContainer/VBoxContainer/HBoxContainer" unique_id=535758520]
+layout_mode = 2
+text = "Send"

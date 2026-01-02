@@ -20,16 +20,19 @@ _bundled = {
 }
 
 [node name="LobbyListView" type="Control" unique_id=415710229]
+custom_minimum_size = Vector2(250, 400)
 layout_mode = 3
-anchors_preset = 0
-offset_left = 932.0
-offset_top = 11.0
-offset_right = 1232.0
-offset_bottom = 411.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("1_3cl2o")
 player_entry_scene = SubResource("PackedScene_secsp")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=12059834]
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1852979880]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,9 +40,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=290472703]
-layout_mode = 2
-text = "Lobby:"
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=409861281]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
-[node name="PlayerList" type="VBoxContainer" parent="VBoxContainer" unique_id=399956125]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=12059834]
+layout_mode = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer" unique_id=290472703]
+layout_mode = 2
+text = "Users:"
+
+[node name="PlayerList" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=399956125]
 layout_mode = 2

@@ -11,7 +11,7 @@ func _ready() -> void:
 	avatar_rect = $Avatar
 	name_label = $Name
 	ping_label = $Ping
-
+	avatar_rect.texture = null
 	Steam.avatar_loaded.connect(_on_loaded_avatar)
 
 
@@ -27,6 +27,7 @@ func setup(steam_id: int) -> void:
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
 	if user_id != steam_id: return
+	if avatar_rect.texture != null: return
 	
 	print("Avatar for local user: %s" % user_id)
 	print("Size: %s" % avatar_size)

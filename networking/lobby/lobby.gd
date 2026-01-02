@@ -39,21 +39,39 @@ func create_lobby() -> void:
 	if lobby_id == 0:
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
-func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:
-	# Set the lobby ID
-	lobby_id = lobby
-	print("Joined a lobby: %s" % lobby_id)
+func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
+		# If joining was successful
+		if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
+			# Set this lobby ID as your lobby ID
+			lobby_id = this_lobby_id
 
-	# Retrieve lobby data
-	lobby_data = Steam.getAllLobbyData(lobby_id)
-	print("Lobby Data: %s" % lobby_data)
+			# Get the lobby members
+			get_lobby_members()
 
-	# Get the current members of the lobby
-	var num_members: int = Steam.getNumLobbyMembers(lobby_id)
-	for i in range(num_members):
-		var member_steam_id: int = Steam.getLobbyMemberByIndex(lobby_id, i)
-		lobby_members.append(member_steam_id)
-		print("Lobby Member %s: %s" % [i, member_steam_id])
+			# Make the initial handshake
+			make_p2p_handshake()
+
+			# Else it failed for some reason
+		else:
+			# Get the failure reason
+			var fail_reason: String
+
+			match response:
+				Steam.CHAT_ROOM_ENTER_RESPONSE_DOESNT_EXIST: fail_reason = "This lobby no longer exists."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_NOT_ALLOWED: fail_reason = "You don't have permission to join this lobby."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_FULL: fail_reason = "The lobby is now full."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_ERROR: fail_reason = "Uh... something unexpected happened!"
+				Steam.CHAT_ROOM_ENTER_RESPONSE_BANNED: fail_reason = "You are banned from this lobby."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_LIMITED: fail_reason = "You cannot join due to having a limited account."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_CLAN_DISABLED: fail_reason = "This lobby is locked or disabled."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_COMMUNITY_BAN: fail_reason = "This lobby is community locked."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_MEMBER_BLOCKED_YOU: fail_reason = "A user in the lobby has blocked you from joining."
+				Steam.CHAT_ROOM_ENTER_RESPONSE_YOU_BLOCKED_MEMBER: fail_reason = "A user you have blocked is in the lobby."
+
+			print("Failed to join this chat room: %s" % fail_reason)
+
+		# #Reopen the lobby list
+		# _on_open_lobby_list_pressed()
 
 func _on_lobby_created(_connect: int, this_lobby_id: int) -> void:
 	if _connect == 1:
@@ -81,7 +99,24 @@ func get_lobby_list() -> void:
 	Steam.requestLobbyList()
 
 
- 
+func get_lobby_members() -> void:
+	# Clear your previous lobby list
+	lobby_members.clear()
+
+	# Get the number of members from this lobby from Steam
+	var num_of_members: int = Steam.getNumLobbyMembers(lobby_id)
+
+	# Get the data of these players from Steam
+	for this_member in range(0, num_of_members):
+		# Get the member's Steam ID
+		var member_steam_id: int = Steam.getLobbyMemberByIndex(lobby_id, this_member)
+
+		# Get the member's Steam name
+		var member_steam_name: String = Steam.getFriendPersonaName(member_steam_id)
+
+		# Add them to the list
+		lobby_members.append({"steam_id":member_steam_id, "steam_name":member_steam_name})
+
 func check_command_line() -> void:
 	var these_arguments: Array = OS.get_cmdline_args()
 
@@ -95,3 +130,8 @@ func check_command_line() -> void:
 				# Something like a loading into lobby screen
 				print("Command line lobby ID: %s" % these_arguments[1])
 				join_lobby(int(these_arguments[1]))
+
+func make_p2p_handshake() -> void:
+	print("Sending P2P handshake to the lobby")
+
+	# send_p2p_packet(0, {"message": "handshake", "from": steam_id})

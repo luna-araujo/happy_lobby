@@ -47,8 +47,13 @@ func _init() -> void:
 	steam_image = null
 	ui_language = Steam.getSteamUILanguage()
 	
+	Steam.lobby_joined.connect(_on_lobby_joined)
+
 	Steam.avatar_loaded.connect(_on_loaded_avatar)
 	Steam.getPlayerAvatar(2, steam_id)
+
+func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:
+	LobbyWindow.create_window(get_tree())
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
 	if user_id != steam_id: return
