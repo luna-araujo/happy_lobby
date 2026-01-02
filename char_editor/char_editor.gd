@@ -1,23 +1,23 @@
 class_name CharEditor
 extends Control
 
-static var CHAR_PATH:String = "res://assets/char/"
+static var CHAR_PATH:String = "res://assets/character/"
 
 @onready var option_scene:PackedScene = load("uid://c83twyarpre66")
 
-@onready var char:Char = %Char
+@onready var character:Character = %Char
 @onready var save_button:Button = %SaveButton
 @onready var load_button:Button = %LoadButton
 
 var char_customization_options:Array[CharCustomizeOption]
 
 func _ready() -> void:
-	char.customized.connect(update_options)
+	character.customized.connect(update_options)
 	
 	save_button.pressed.connect(func():
-		Char.save_customision(char))
+		Character.save_customision(character))
 	load_button.pressed.connect(func():
-		Char.load_customization(char))
+		Character.load_customization(character))
 	
 	char_customization_options.assign(get_tree().get_nodes_in_group("char_option"))
 	setup_options()
@@ -29,12 +29,12 @@ func setup_options():
 
 func update_options():
 	for option in char_customization_options:
-		option.set_index(get_customization_index(char,option.modified_polygons[0]),true)
+		option.set_index(get_customization_index(character,option.modified_polygons[0]),true)
 
 func on_char_options_changed(index:int, options:Array[String]):
 	for option in options:
-		char.change_polygon_texture(option, get_customization_options(option)[index])
-		char.play_anim_once("emote_hi")
+		character.change_polygon_texture(option, get_customization_options(option)[index])
+		character.play_anim_once("emote_hi")
 
 static func get_customization_options(option_name:String) -> Array:
 	var path:String = "%s%s" % [CHAR_PATH, option_name]
@@ -43,7 +43,7 @@ static func get_customization_options(option_name:String) -> Array:
 	files = files.map(func (x:String): return x.insert(0,"%s%s/" % [CHAR_PATH, option_name]))
 	return files
 
-static func get_customization_index(_char:Char, option_name:String) -> int:
+static func get_customization_index(_char:Character, option_name:String) -> int:
 	var poly:Polygon2D = _char.polygons.filter(
 		func (x:Polygon2D):
 		return true if x.name == option_name else false

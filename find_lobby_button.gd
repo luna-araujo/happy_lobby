@@ -1,6 +1,11 @@
+class_name FindLobbyButton
 extends Button
 
 func _ready() -> void:
+	if NetworkManager.using_steam == false:
+		disabled = true
+		return
+
 	pressed.connect(_on_pressed)
 
 func _on_pressed():

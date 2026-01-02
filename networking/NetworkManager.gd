@@ -5,6 +5,7 @@ signal avatar_loaded()
 
 const APP_ID = 480 #Spacewar
 
+var using_steam: bool = false
 var app_installed_depots: Array
 var app_languages: String
 var app_owner: int
@@ -21,13 +22,24 @@ var steam_username: String
 var steam_image: ImageTexture
 var ui_language: String
 
+var peer:ENetMultiplayerPeer = ENetMultiplayerPeer.new()
+
 var lobby:Lobby = Lobby.new()
 
+func _ready():
+	if !using_steam:
+		return
+	pass
 
 
 func _init() -> void:
 	add_child(lobby)
-	
+
+	if !using_steam:
+		print("Steam is not available.")
+		steam_id = RandomNumberGenerator.new().randi()
+		return
+
 	var initialize_response: Dictionary = Steam.steamInitEx( APP_ID, true )
 	print("Did Steam initialize?: %s " % initialize_response)
 	
@@ -52,6 +64,7 @@ func _init() -> void:
 	Steam.avatar_loaded.connect(_on_loaded_avatar)
 	Steam.getPlayerAvatar(2, steam_id)
 
+
 func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:
 	LobbyWindow.create_window(get_tree())
 
@@ -62,13 +75,6 @@ func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByte
 	print("Avatar for local user: %s" % user_id)
 	print("Size: %s" % avatar_size)
 
-	# Create the image and texture for loading
 	var avatar_image: Image = Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
-
-	# Optionally resize the image if it is too large
-	#if avatar_size > 128:
-		#avatar_image.resize(128, 128, Image.INTERPOLATE_LANCZOS)
-
-	# Apply the image to a texture
 	steam_image = ImageTexture.create_from_image(avatar_image)
 	avatar_loaded.emit()

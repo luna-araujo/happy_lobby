@@ -1,5 +1,5 @@
-class_name Char
-extends Node2D
+class_name Character
+extends CharacterBody2D
 
 signal customized;
 
@@ -34,25 +34,25 @@ func change_polygon_texture(polygon_name:String,texture_path:String):
 	poly.texture = new_texture
 	customized.emit()
 
-static func save_customision(char:Char):
+static func save_customision(character:Character):
 	var save_data = {
 		"textures" : {}
 	}
-	for poly in char.polygons:
+	for poly in character.polygons:
 		save_data.textures[poly.name] = poly.texture.resource_path
 	
 	var json_string:String = JSON.stringify(save_data,"\t")
 	var file = FileAccess.open("user://user_char.json", FileAccess.WRITE)
 	file.store_string(json_string)
 
-static func load_customization(char:Char):
+static func load_customization(character:Character):
 	var json_string = FileAccess.open("user://user_char.json", FileAccess.READ).get_as_text()
 	var json = JSON.new()
 	var error = json.parse(json_string)
 	if error == OK:
 		var data_received:Dictionary = json.data
 		var textures:Dictionary = data_received["textures"]
-		char.polygons.map(
+		character.polygons.map(
 			func (x):
 			var i = 0
 			for texture in textures.keys():
@@ -60,6 +60,6 @@ static func load_customization(char:Char):
 				if x.name == texture:
 					x.texture = ResourceLoader.load(textures[texture])
 			return true )
-		char.customized.emit()
+		character.customized.emit()
 	else:
 		print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())

@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://di684i051im27" path="res://networking/lobby/lobby_list_view/lobby_list_view.tscn" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://cfloiyh8ohrpl" path="res://find_lobby_button.gd" id="2_h2yge"]
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://create_lobby_button.gd" id="3_1bvp3"]
+[ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://join_lobby_button.gd" id="3_lquwl"]
+[ext_resource type="PackedScene" uid="uid://dhfwmudwvj7ua" path="res://game_world.tscn" id="6_7mycd"]
 
 [node name="Main" type="Control" unique_id=1772155142]
 layout_mode = 3
@@ -48,6 +50,7 @@ script = ExtResource("2_h2yge")
 [node name="JoinLobbyButton" type="Button" parent="VBoxContainer" unique_id=552614788]
 layout_mode = 2
 text = "Join Lobby"
+script = ExtResource("3_lquwl")
 
 [node name="CreateLobbyButton" type="Button" parent="VBoxContainer" unique_id=2109981042]
 layout_mode = 2
@@ -65,3 +68,5 @@ offset_right = -10.0
 offset_bottom = 408.0
 grow_horizontal = 0
 grow_vertical = 1
+
+[node name="GameWorld" parent="." unique_id=1406878422 instance=ExtResource("6_7mycd")]

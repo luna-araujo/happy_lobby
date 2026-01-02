@@ -17,6 +17,11 @@
 [ext_resource type="Texture2D" uid="uid://bnkle37q1eb1v" path="res://assets/char/FootFront/FootFront_2.png" id="14_tnf04"]
 [ext_resource type="Texture2D" uid="uid://d15glmhharxrq" path="res://assets/char/Body/Body_2.png" id="15_f3s2d"]
 [ext_resource type="Texture2D" uid="uid://b6ee3sy5b3qe4" path="res://assets/char/ArmFront/ArmFront_2.png" id="16_3iq1q"]
+[ext_resource type="Script" uid="uid://lbql10o5570w" path="res://char_editor/character_movement.gd" id="18_paj6h"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_paj6h"]
+radius = 45.0
+height = 214.0
 
 [sub_resource type="Animation" id="Animation_5xjyk"]
 resource_name = "RESET"
@@ -1009,8 +1014,15 @@ _data = {
 &"idle": SubResource("Animation_x7jrk")
 }
 
-[node name="Char" type="Node2D" unique_id=2077318848]
+[node name="Character" type="CharacterBody2D" unique_id=659284526]
 script = ExtResource("1_x7jrk")
+
+[node name="CharacterMovement" type="Node" parent="." unique_id=1718915094]
+script = ExtResource("18_paj6h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1916836749]
+position = Vector2(0, -108)
+shape = SubResource("CapsuleShape2D_paj6h")
 
 [node name="Polygons" type="Node2D" parent="." unique_id=1333366838]
 position = Vector2(-133, -256)
