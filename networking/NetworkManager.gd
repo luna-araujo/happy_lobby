@@ -1,9 +1,11 @@
 #Singleton -> NetworkManager
 extends Node
 
+signal steam_started()
 signal avatar_loaded()
 
 const APP_ID = 480 #Spacewar
+const LOCAL_USER_ID: String = "user://local_user_id"
 
 var using_steam: bool = false
 var app_installed_depots: Array
@@ -22,22 +24,21 @@ var steam_username: String
 var steam_image: ImageTexture
 var ui_language: String
 
-var peer:ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 
 var lobby:Lobby = Lobby.new()
 
-func _ready():
-	if !using_steam:
-		return
-	pass
-
-
 func _init() -> void:
+	using_steam = SessionManager.USING_STEAM
+
 	add_child(lobby)
 
 	if !using_steam:
 		print("Steam is not available.")
-		steam_id = RandomNumberGenerator.new().randi()
+		steam_id = get_local_user_id()
+		steam_username = get_user_os_username()
+		steam_image = null
+		ui_language = OS.get_locale()
+		steam_started.emit()
 		return
 
 	var initialize_response: Dictionary = Steam.steamInitEx( APP_ID, true )
@@ -59,14 +60,11 @@ func _init() -> void:
 	steam_image = null
 	ui_language = Steam.getSteamUILanguage()
 	
-	Steam.lobby_joined.connect(_on_lobby_joined)
-
 	Steam.avatar_loaded.connect(_on_loaded_avatar)
 	Steam.getPlayerAvatar(2, steam_id)
 
+	steam_started.emit()
 
-func _on_lobby_joined( lobby: int, permissions: int, locked: bool, response: int ) -> void:
-	LobbyWindow.create_window(get_tree())
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
 	if user_id != steam_id: return
@@ -78,3 +76,31 @@ func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByte
 	var avatar_image: Image = Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
 	steam_image = ImageTexture.create_from_image(avatar_image)
 	avatar_loaded.emit()
+
+func get_local_user_id() -> int:
+	var file = FileAccess.open(LOCAL_USER_ID, FileAccess.READ)
+	if file == null:
+		var new_id: int = randi()
+		var write_file = FileAccess.open(LOCAL_USER_ID, FileAccess.WRITE)
+		write_file.store_32(new_id)
+		write_file.close()
+		return new_id
+	else:
+		var existing_id: int = file.get_32()
+		file.close()
+		return existing_id
+
+func get_user_os_username() -> String:
+	var username = ""
+	# Check for the 'USER' environment variable (common on Linux, macOS, Android)
+	if OS.has_environment("USER"):
+		username = OS.get_environment("USER")
+	# Check for the 'USERNAME' environment variable (common on Windows)
+	elif OS.has_environment("USERNAME"):
+		username = OS.get_environment("USERNAME")
+	return username
+
+func make_p2p_handshake() -> void:
+	print("Sending P2P handshake to the lobby")
+
+	# send_p2p_packet(0, {"message": "handshake", "from": steam_id})

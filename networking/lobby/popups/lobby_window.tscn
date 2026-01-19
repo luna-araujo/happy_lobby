@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dnfgs1h41psjj"]
 
-[ext_resource type="Script" uid="uid://bfp0uichbq3xj" path="res://networking/lobby/lobby_window.gd" id="1_ayg67"]
+[ext_resource type="Script" uid="uid://bfp0uichbq3xj" path="res://networking/lobby/popups/lobby_window.gd" id="1_ayg67"]
 [ext_resource type="PackedScene" uid="uid://di684i051im27" path="res://networking/lobby/lobby_list_view/lobby_list_view.tscn" id="1_koq3c"]
 
 [node name="LobbyWindow" type="Window" unique_id=1157487822]

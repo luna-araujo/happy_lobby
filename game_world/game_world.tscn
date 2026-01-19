@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://d3pa5gt5w0d3c"]
+
+[ext_resource type="Script" uid="uid://d2miq8rgp68m4" path="res://game_world/game_world.gd" id="1_w1xl6"]
+
+[node name="GameWorld" type="Node2D" unique_id=1406878422]
+script = ExtResource("1_w1xl6")
+
+[node name="PlayerCharacters" type="Node2D" parent="." unique_id=1576283824]
+unique_name_in_owner = true
