@@ -1,7 +1,7 @@
 class_name LobbyFinderWindow
 extends Window
 
-var refresh:Callable
+var refresh: Callable
 
 func _ready() -> void:
 	close_requested.connect(_on_close_requested)
@@ -17,7 +17,7 @@ func _on_close_requested():
 	queue_free()
 
 func _on_lobby_match_list(these_lobbies: Array) -> void:
-	var children:Array[Node] = %List.get_children()
+	var children: Array[Node] = %List.get_children()
 	for child in children:
 		child.queue_free()
 
@@ -40,7 +40,7 @@ func _on_lobby_match_list(these_lobbies: Array) -> void:
 		%"List".add_child(lobby_button)
 
 
-static func create_window(scene_tree:SceneTree) -> LobbyFinderWindow:
-	var new_window:LobbyFinderWindow = ResourceLoader.load("res://networking/lobby/lobby_finder_window.tscn").instantiate() as LobbyFinderWindow
+static func create_window(scene_tree: SceneTree) -> LobbyFinderWindow:
+	var new_window: LobbyFinderWindow = ResourceLoader.load("res://networking/lobby/popups/lobby_finder_window.tscn").instantiate() as LobbyFinderWindow
 	scene_tree.root.add_child(new_window)
 	return new_window

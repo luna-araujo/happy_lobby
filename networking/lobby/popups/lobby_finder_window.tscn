@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bayb80ou8ulcx"]
 
-[ext_resource type="Script" uid="uid://cwew35wmf78x7" path="res://networking/lobby/lobby_finder_window.gd" id="1_xaiii"]
+[ext_resource type="Script" uid="uid://cwew35wmf78x7" path="res://networking/lobby/popups/lobby_finder_window.gd" id="1_xaiii"]
 
 [node name="LobbyFinderWindow" type="Window" unique_id=945007723]
 transparent_bg = true

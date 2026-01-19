@@ -1,0 +1,8 @@
+local_user_id -> user://local_user_id
+
+user_character -> user://user_char.json/
+user_world -> user://user_world.json/
+
+connected_worlds:
+    user://remote/{world_id}/
+    world_characters/characters/{steam_id}

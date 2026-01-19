@@ -20,17 +20,12 @@ func _ready() -> void:
 		#Steam.lobby_match_list.connect(_on_lobby_match_list)
 		#Steam.lobby_message.connect(_on_lobby_message)
 		#Steam.persona_state_change.connect(_on_persona_change)
-	else:
-		multiplayer.connected_to_server.connect(_on_connected_to_server)
-		multiplayer.connection_failed.connect(_on_connection_failed)
-		multiplayer.peer_connected.connect(_on_peer_connected)
-		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 	# Check for command line arguments
 	check_command_line()
 
 
-func join_lobby(this_lobby_id: int) -> void:
+func join_steam_lobby(this_lobby_id: int) -> void:
 	if NetworkManager:
 		print("Attempting to join lobby %s" % lobby_id)
 		lobby_members.clear()
@@ -38,11 +33,6 @@ func join_lobby(this_lobby_id: int) -> void:
 
 
 func create_lobby() -> void:
-	if NetworkManager.using_steam == false:
-		print("Creating a lobby by IP")
-		create_lobby_by_ip()
-		return
-	
 	# Make sure a lobby is not already set
 	if lobby_id == 0:
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
@@ -52,7 +42,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
 			lobby_id = this_lobby_id
 			get_lobby_members()
-			make_p2p_handshake()
+			NetworkManager.make_p2p_handshake()
 		else:
 			var fail_reason: String
 
@@ -108,33 +98,7 @@ func get_lobby_members() -> void:
 			var member_steam_name: String = Steam.getFriendPersonaName(member_steam_id)
 			lobby_members.append({"steam_id":member_steam_id, "steam_name":member_steam_name})
 		
-func join_lobby_by_ip(ip_address: String) -> void:
-	NetworkManager.peer.create_client(ip_address, 4242)
-	NetworkManager.multiplayer.multiplayer_peer = NetworkManager.peer
 
-func create_lobby_by_ip() -> void:
-	var error = NetworkManager.peer.create_server(4242, lobby_members_max)
-	if error != OK:
-		print("Failed to create lobby by IP: %s" % error)
-		return
-
-	NetworkManager.multiplayer.multiplayer_peer = NetworkManager.peer
-
-	lobby_members.append({"steam_id": NetworkManager.steam_id, "steam_name": "Host"})
-	lobby_id = 1  # Dummy ID for non-Steam lobby
-	LobbyWindow.create_window(get_tree())
-
-func _on_connected_to_server() -> void:
-	print("Connected to lobby by IP")
-
-func _on_connection_failed() -> void:
-	print("Failed to connect to lobby by IP")
-
-func _on_peer_connected(id: int) -> void:
-	print("Peer connected with ID: %s" % id)
-
-func _on_peer_disconnected(id: int) -> void:
-	print("Peer disconnected with ID: %s" % id)
 
 func check_command_line() -> void:
 	var these_arguments: Array = OS.get_cmdline_args()
@@ -148,9 +112,4 @@ func check_command_line() -> void:
 				# At this point, you'll probably want to change scenes
 				# Something like a loading into lobby screen
 				print("Command line lobby ID: %s" % these_arguments[1])
-				join_lobby(int(these_arguments[1]))
-
-func make_p2p_handshake() -> void:
-	print("Sending P2P handshake to the lobby")
-
-	# send_p2p_packet(0, {"message": "handshake", "from": steam_id})
+				join_steam_lobby(int(these_arguments[1]))

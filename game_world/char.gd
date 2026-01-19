@@ -3,7 +3,13 @@ extends CharacterBody2D
 
 signal customized;
 
+var player_id:int = 1:
+	set(id):
+		player_id = id
+		$PlayerInput.set_multiplayer_authority(id)
+
 var animation_player:AnimationPlayer 
+var input:PlayerInput = null
 
 var polygons:Array[Polygon2D]
 var char_name:String = "noName"
@@ -14,6 +20,8 @@ var height:float = 1;
 func _ready() -> void:
 	$Polygons.get_children().map(func (x): polygons.append(x))
 	animation_player = $AnimationPlayer
+	input = $PlayerInput
+
 
 func play_anim_once(anim_name:String):
 	animation_player.play(anim_name)
@@ -34,7 +42,11 @@ func change_polygon_texture(polygon_name:String,texture_path:String):
 	poly.texture = new_texture
 	customized.emit()
 
-static func save_customision(character:Character):
+
+
+const LOCAL_PLAYER_FILE:String = "user://user_char.json"
+
+static func store_save(character:Character):
 	var save_data = {
 		"textures" : {}
 	}
@@ -42,11 +54,11 @@ static func save_customision(character:Character):
 		save_data.textures[poly.name] = poly.texture.resource_path
 	
 	var json_string:String = JSON.stringify(save_data,"\t")
-	var file = FileAccess.open("user://user_char.json", FileAccess.WRITE)
+	var file = FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.WRITE)
 	file.store_string(json_string)
 
-static func load_customization(character:Character):
-	var json_string = FileAccess.open("user://user_char.json", FileAccess.READ).get_as_text()
+static func load_save(character:Character, path:String=""):
+	var json_string = FileAccess.open(path, FileAccess.READ).get_as_text()
 	var json = JSON.new()
 	var error = json.parse(json_string)
 	if error == OK:

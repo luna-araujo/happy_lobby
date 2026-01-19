@@ -15,9 +15,9 @@ func _ready() -> void:
 	character.customized.connect(update_options)
 	
 	save_button.pressed.connect(func():
-		Character.save_customision(character))
+		Character.store_save(character))
 	load_button.pressed.connect(func():
-		Character.load_customization(character))
+		Character.load_save(character))
 	
 	char_customization_options.assign(get_tree().get_nodes_in_group("char_option"))
 	setup_options()

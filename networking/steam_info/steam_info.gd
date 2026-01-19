@@ -6,8 +6,8 @@ extends PanelContainer
 @onready var stats:RichTextLabel = $MarginContainer/VBoxContainer/SteamStats
 
 func _ready() -> void:
-	if NetworkManager.using_steam == false:
-		steam_name.text = "Not running on Steam"
+	if SessionManager.USING_STEAM == false:
+		steam_name.text = SessionManager.current_user
 		return
 	
 	NetworkManager.avatar_loaded.connect(_on_avatar_loaded)
