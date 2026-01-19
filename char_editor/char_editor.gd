@@ -1,7 +1,7 @@
 class_name CharEditor
 extends Control
 
-static var CHAR_PATH:String = "res://assets/character/"
+static var CHAR_PATH:String = "res://assets/char/"
 
 @onready var option_scene:PackedScene = load("uid://c83twyarpre66")
 
