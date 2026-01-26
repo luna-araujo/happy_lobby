@@ -7,10 +7,10 @@
 [ext_resource type="Texture2D" uid="uid://b0fucu33gcuqt" path="res://assets/char/Head/Head_2.png" id="4_cfrs6"]
 [ext_resource type="Texture2D" uid="uid://bpbb4wxq8y7h8" path="res://assets/char/Ears/Ears_2.png" id="4_x7jrk"]
 [ext_resource type="Texture2D" uid="uid://dd7tq1g0ibk1s" path="res://assets/char/Eyes/Eyes_2.png" id="5_x7jrk"]
-[ext_resource type="Texture2D" uid="uid://icar036qxln4" path="res://assets/char/Pupils/Pupil_2.png" id="6_cfrs6"]
 [ext_resource type="Texture2D" uid="uid://cg52h0f46s8sh" path="res://assets/char/Mouth/Mouth_2.png" id="7_cfrs6"]
 [ext_resource type="Texture2D" uid="uid://bin3kbcy4fv5q" path="res://assets/char/HairFront/HairFront_2.png" id="8_x7jrk"]
 [ext_resource type="Texture2D" uid="uid://cha11r1sjt5k2" path="res://assets/char/Nose/Nose_2.png" id="9_lbgpb"]
+[ext_resource type="Texture2D" uid="uid://cdk00bfxu58k4" path="res://assets/char/Pupil/Pupil_1.png" id="9_v42oa"]
 [ext_resource type="Texture2D" uid="uid://jyhfsl2v0a3v" path="res://assets/char/LegBack/LegBack_2.png" id="10_5xjyk"]
 [ext_resource type="Texture2D" uid="uid://cr2d5gy38wqfn" path="res://assets/char/FootBack/FootBack_2.png" id="11_3m3tx"]
 [ext_resource type="Texture2D" uid="uid://5hoyhs2mfqag" path="res://assets/char/ArmBack/ArmBack_2.png" id="12_376lq"]
@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://d15glmhharxrq" path="res://assets/char/Body/Body_2.png" id="15_f3s2d"]
 [ext_resource type="Texture2D" uid="uid://b6ee3sy5b3qe4" path="res://assets/char/ArmFront/ArmFront_2.png" id="16_3iq1q"]
 [ext_resource type="Script" uid="uid://lbql10o5570w" path="res://game_world/player_input.gd" id="18_paj6h"]
+[ext_resource type="Texture2D" uid="uid://hkvkaisktqfk" path="res://assets/char/Waist/Waist_4.png" id="18_u7rc2"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_v42oa"]
 properties/0/path = NodePath("PlayerInput:direction")
@@ -1084,9 +1085,9 @@ polygons = [PackedInt32Array(0, 2, 5), PackedInt32Array(0, 2, 3)]
 bones = ["Hip", PackedFloat32Array(0, 0, 0, 0, 0, 0), "Hip/Torso", PackedFloat32Array(0, 0, 0, 0, 0, 0), "Hip/Torso/Head", PackedFloat32Array(1, 1, 1, 1, 1, 1)]
 internal_vertex_count = 2
 
-[node name="Pupils" type="Polygon2D" parent="Polygons" unique_id=2024429786]
+[node name="Pupil" type="Polygon2D" parent="Polygons" unique_id=2024429786]
 texture_filter = 1
-texture = ExtResource("6_cfrs6")
+texture = ExtResource("9_v42oa")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(72.00003, 32.000015, 72.00003, 128.00003, 183.99997, 128.00003, 183.99997, 32.000015, 72, 127.999985, 72, 127.999985)
 uv = PackedVector2Array(72.00003, 32.000015, 72.00003, 128.00003, 183.99997, 128.00003, 183.99997, 32.000015, 72, 127.999985, 72, 127.999985)
@@ -1169,6 +1170,15 @@ polygon = PackedVector2Array(70.6225, 211.1276, 67.67996, 283.95517, 174.34662, 
 uv = PackedVector2Array(70.6225, 211.1276, 67.67996, 283.95517, 174.34662, 287.63333, 180.96729, 221.42644)
 polygons = [PackedInt32Array(0, 2, 3), PackedInt32Array(0, 1, 2)]
 bones = ["Hip", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/Head", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder/BackArm", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder/BackArm/BackHand", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder/FrontArm", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder/FrontArm/FrontHand", PackedFloat32Array(0, 0, 0, 0), "Hip/FrontHip", PackedFloat32Array(0, 0, 0, 0), "Hip/FrontHip/FrontLeg", PackedFloat32Array(0, 0, 0, 0), "Hip/FrontHip/FrontLeg/FrontFoot", PackedFloat32Array(1, 1, 1, 1), "Hip/BackHip", PackedFloat32Array(0, 0, 0, 0), "Hip/BackHip/BackLeg", PackedFloat32Array(0, 0, 0, 0), "Hip/BackHip/BackLeg/BackFoot", PackedFloat32Array(0, 0, 0, 0)]
+
+[node name="Waist" type="Polygon2D" parent="Polygons" unique_id=778708237]
+texture_filter = 1
+texture = ExtResource("18_u7rc2")
+skeleton = NodePath("../../Skeleton2D")
+polygon = PackedVector2Array(72.25198, 149.40811, 68.68404, 233.7008, 198.91402, 237.71474, 188.21019, 149.40811)
+uv = PackedVector2Array(72.25198, 149.40811, 68.68404, 233.7008, 198.91402, 237.71474, 188.21019, 149.40811)
+polygons = [PackedInt32Array(3, 2, 6), PackedInt32Array(3, 7, 6), PackedInt32Array(6, 5, 7), PackedInt32Array(5, 4, 7), PackedInt32Array(4, 0, 7), PackedInt32Array(4, 1, 0), PackedInt32Array(0, 2, 3), PackedInt32Array(0, 1, 2)]
+bones = ["Hip", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/Head", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder/BackArm", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/BackShoulder/BackArm/BackHand", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder/FrontArm", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso/FrontShoulder/FrontArm/FrontHand", PackedFloat32Array(0, 0, 0, 0), "Hip/FrontHip", PackedFloat32Array(0.5, 0.5, 0.5, 0.5), "Hip/FrontHip/FrontLeg", PackedFloat32Array(0, 0, 0, 0), "Hip/FrontHip/FrontLeg/FrontFoot", PackedFloat32Array(0, 0, 0, 0), "Hip/BackHip", PackedFloat32Array(0, 0, 0, 0), "Hip/BackHip/BackLeg", PackedFloat32Array(0, 0, 0, 0), "Hip/BackHip/BackLeg/BackFoot", PackedFloat32Array(0, 0, 0, 0)]
 
 [node name="Body" type="Polygon2D" parent="Polygons" unique_id=1400829861]
 texture_filter = 1

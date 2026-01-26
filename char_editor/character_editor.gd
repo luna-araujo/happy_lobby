@@ -33,6 +33,8 @@ func update_options():
 
 func on_char_options_changed(index:int, options:Array[String]):
 	for option in options:
+		var customization:Array = get_customization_options(option)
+		if customization.size() <= index: return
 		character.change_polygon_texture(option, get_customization_options(option)[index])
 		character.play_anim_once("emote_hi")
 

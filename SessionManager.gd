@@ -1,7 +1,7 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = true
+const USING_STEAM: bool = false
 
 var current_user: String = ""
 var steam_id: int = 1
@@ -24,7 +24,6 @@ func _ready() -> void:
 func _on_steam_started() -> void:
 	current_user = NetworkManager.steam_username
 	steam_id = NetworkManager.steam_id
-
 
 
 func join_lobby_by_ip(ip_address: String) -> void:
