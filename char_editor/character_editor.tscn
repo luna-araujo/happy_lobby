@@ -88,7 +88,7 @@ modified_polygons = Array[String](["Body", "ArmFront", "ArmBack"])
 [node name="LegsOption" parent="TabContainer/General" unique_id=584893702 instance=ExtResource("2_6cybl")]
 layout_mode = 2
 title = "Legs"
-modified_polygons = Array[String](["LegFront", "LegBack"])
+modified_polygons = Array[String](["LegFront", "LegBack", "Waist"])
 
 [node name="FeetOption" parent="TabContainer/General" unique_id=1336105309 instance=ExtResource("2_6cybl")]
 layout_mode = 2
@@ -118,7 +118,7 @@ modified_polygons = Array[String](["Nose"])
 [node name="EyesOption" parent="TabContainer/Face" unique_id=2007155135 instance=ExtResource("2_6cybl")]
 layout_mode = 2
 title = "Eyes"
-modified_polygons = Array[String](["Eyes", "Pupils"])
+modified_polygons = Array[String](["Eyes", "Pupil"])
 
 [node name="HairFrontOption" parent="TabContainer/Face" unique_id=819205491 instance=ExtResource("2_6cybl")]
 layout_mode = 2

@@ -31,7 +31,6 @@ func _on_steam_started() -> void:
 	steam_id = NetworkManager.steam_id
 
 
-
 func join_lobby_by_ip(ip_address: String) -> bool:
 	var error:Error = peer.create_client(ip_address, 4242)
 	if error != OK:
