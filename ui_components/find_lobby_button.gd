@@ -4,6 +4,7 @@ extends Button
 func _ready() -> void:
 	if NetworkManager.using_steam == false:
 		disabled = true
+		hide()
 		return
 
 	pressed.connect(_on_pressed)

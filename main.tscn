@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ds8o4joided5g"]
 
 [ext_resource type="PackedScene" uid="uid://bp0nxd1m8bwml" path="res://networking/steam_info/steam_info.tscn" id="1_ig7tw"]
+[ext_resource type="Script" uid="uid://d2jy6mcho3dot" path="res://ui_components/leave_lobby_button.gd" id="2_7mycd"]
 [ext_resource type="Script" uid="uid://cfloiyh8ohrpl" path="res://ui_components/find_lobby_button.gd" id="2_h2yge"]
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://ui_components/create_lobby_button.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://ui_components/join_lobby_button.gd" id="3_lquwl"]
@@ -55,6 +56,12 @@ theme_override_constants/margin_bottom = 8
 [node name="VBoxContainer" type="VBoxContainer" parent="MainMenu/MarginContainer" unique_id=1766106065]
 layout_mode = 2
 alignment = 2
+
+[node name="LeaveLobbyButton" type="Button" parent="MainMenu/MarginContainer/VBoxContainer" unique_id=680708320]
+layout_mode = 2
+text = "Leave Lobby"
+script = ExtResource("2_7mycd")
+metadata/_custom_type_script = "uid://d2jy6mcho3dot"
 
 [node name="FindLobbyButton" type="Button" parent="MainMenu/MarginContainer/VBoxContainer" unique_id=232632436]
 layout_mode = 2

@@ -6,7 +6,7 @@ func spawn_player_character(id: int) -> Character:
 	if not multiplayer.is_server():
 		return null
 	
-	var character_scene: PackedScene = preload("res://game_world/char.tscn")
+	var character_scene: PackedScene = preload("res://game_world/char/char.tscn")
 	var player_character: Character = character_scene.instantiate() as Character
 	%PlayerCharacters.add_child(player_character)
 	player_character.player_id = id
@@ -42,7 +42,7 @@ func _spawn_player_on_clients(id: int, position: Vector2, player_name: String) -
 	
 	print("Spawning player character for ID: %s" % id)
 
-	var character_scene: PackedScene = preload("res://game_world/char.tscn")
+	var character_scene: PackedScene = preload("res://game_world/char/char.tscn")
 	var player_character: Character = character_scene.instantiate() as Character
 	%PlayerCharacters.add_child(player_character)
 	player_character.player_id = id
@@ -68,3 +68,9 @@ func remove_character_by_id(id: int) -> void:
 	
 	# Notify all clients to remove their representation
 	_remove_player_on_clients.rpc(id)
+
+func remove_all_characters() -> void:
+	# Remove all player characters from the game world
+	for character in %PlayerCharacters.get_children():
+		if character is Character:
+			character.queue_free()

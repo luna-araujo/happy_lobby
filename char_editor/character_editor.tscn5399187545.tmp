@@ -16,7 +16,7 @@ script = ExtResource("1_8ujqu")
 
 [node name="Char" parent="." unique_id=2077318848 instance=ExtResource("1_del1b")]
 unique_name_in_owner = true
-position = Vector2(602, 498)
+position = Vector2(620, 498)
 
 [node name="TabContainer" type="TabContainer" parent="." unique_id=2023190382]
 layout_mode = 0

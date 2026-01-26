@@ -1,7 +1,10 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = true
+const USING_STEAM: bool = false
+
+signal lobby_joined
+signal lobby_left
 
 var current_user: String = ""
 var steam_id: int = 1
@@ -17,9 +20,11 @@ func _ready() -> void:
 	NetworkManager.steam_started.connect(_on_steam_started)
 
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+
 
 func _on_steam_started() -> void:
 	current_user = NetworkManager.steam_username
@@ -27,22 +32,24 @@ func _on_steam_started() -> void:
 
 
 
-func join_lobby_by_ip(ip_address: String) -> void:
+func join_lobby_by_ip(ip_address: String) -> bool:
 	var error:Error = peer.create_client(ip_address, 4242)
 	if error != OK:
-		print("Error connecting to lobby by IP: %s" % error)
-		return
+		push_error("Error connecting to lobby by IP: %s" % error)
+		return false
 	multiplayer.multiplayer_peer = peer
+	return true
 
 
 func create_local_lobby() -> void:
 	var error = peer.create_server(4242, 10)
 	if error != OK:
-		print("Created a local lobby: %s" % error)
+		push_error("Error creating a local lobby: %s" % error)
 		return
 
 	multiplayer.multiplayer_peer = peer
 	print("Created a local lobby, hosting on port 4242")
+	lobby_joined.emit()
 	
 	# Server spawns itself as the first player (ID 1)
 	var character = game_world.spawn_player_character(1)
@@ -54,11 +61,26 @@ func create_local_lobby() -> void:
 			"character": character
 		})
 
+func leave_lobby() -> void:
+	if multiplayer.multiplayer_peer:
+		multiplayer.multiplayer_peer.close()
+		multiplayer.multiplayer_peer = null
+		connected_players.clear()
+		lobby_left.emit()
+		game_world.remove_all_characters()
+		print("Left the lobby")
+
 func _on_connected_to_server() -> void:
 	print("Connected to lobby by IP")
+	lobby_joined.emit()
 
 func _on_connection_failed() -> void:
 	print("Failed to connect to lobby by IP")
+	lobby_left.emit()
+
+func _on_server_disconnected() -> void:
+	print("Disconnected from server")
+	lobby_left.emit()
 
 func _on_peer_connected(id: int) -> void:
 	print("Peer connected with ID: %s" % id)
@@ -86,6 +108,12 @@ func _on_peer_connected(id: int) -> void:
 
 func _on_peer_disconnected(id: int) -> void:
 	print("Peer disconnected with ID: %s" % id)
+	if id == multiplayer.get_unique_id() || id == 1:
+		game_world.remove_all_characters()
+		lobby_left.emit()
+		connected_players.clear()
+		return
+
 	
 	# Remove from connected players
 	for i in range(connected_players.size()):

@@ -28,6 +28,9 @@ func play_anim_once(anim_name:String):
 	await animation_player.animation_finished
 	animation_player.play("idle")
 
+func get_polygons_material() -> ShaderMaterial:
+	return polygons[0].material as ShaderMaterial
+
 func change_polygon_texture(polygon_name:String,texture_path:String):
 	var poly:Polygon2D = polygons.filter(
 		func (x:Polygon2D):

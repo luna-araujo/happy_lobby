@@ -8,26 +8,17 @@ func _ready() -> void:
 		hide()
 		return
 
+
+	SessionManager.lobby_joined.connect(on_lobby_joined)
+	SessionManager.lobby_left.connect(on_lobby_left)
 	pressed.connect(_on_pressed)
 
 func _on_pressed() -> void:
 	SessionManager.join_lobby_by_ip("localhost")
 	hide()
-	# var new_popup = PopupPanel.new()
-	# new_popup.borderless = false;
-	# new_popup.title = "Join Lobby"
-	# new_popup.transient = true;
-	# var lobby_code_input = LineEdit.new()
-	# lobby_code_input.placeholder_text = "Enter host ip address"
-	# lobby_code_input.text_submitted.connect(func(ip: String) -> void:
-	# 	NetworkManager.lobby.join_lobby_by_ip(ip)
-	# 	new_popup.hide()
-	# )
-	# new_popup.add_child(lobby_code_input)
-	# get_tree().root.add_child(new_popup)
-	# new_popup.popup_centered(Vector2i(300, 60))
 
+func on_lobby_joined() -> void:
+	hide()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func on_lobby_left() -> void:
+	show()
