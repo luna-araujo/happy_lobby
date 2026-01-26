@@ -11,8 +11,8 @@
 [ext_resource type="Texture2D" uid="uid://cg52h0f46s8sh" path="res://assets/char/Mouth/Mouth_2.png" id="7_cfrs6"]
 [ext_resource type="Texture2D" uid="uid://bin3kbcy4fv5q" path="res://assets/char/HairFront/HairFront_2.png" id="8_x7jrk"]
 [ext_resource type="Texture2D" uid="uid://cha11r1sjt5k2" path="res://assets/char/Nose/Nose_2.png" id="9_lbgpb"]
-[ext_resource type="Texture2D" uid="uid://cdk00bfxu58k4" path="res://assets/char/Pupil/Pupil_1.png" id="9_v42oa"]
 [ext_resource type="Texture2D" uid="uid://jyhfsl2v0a3v" path="res://assets/char/LegBack/LegBack_2.png" id="10_5xjyk"]
+[ext_resource type="Texture2D" uid="uid://bvj60x6wamt4k" path="res://assets/char/Pupil/Pupil_4.png" id="10_g7j7w"]
 [ext_resource type="Texture2D" uid="uid://cr2d5gy38wqfn" path="res://assets/char/FootBack/FootBack_2.png" id="11_3m3tx"]
 [ext_resource type="Texture2D" uid="uid://5hoyhs2mfqag" path="res://assets/char/ArmBack/ArmBack_2.png" id="12_376lq"]
 [ext_resource type="Texture2D" uid="uid://cc27fw7v4tp6a" path="res://assets/char/LegFront/LegFront_2.png" id="13_b8cv4"]
@@ -20,6 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://d15glmhharxrq" path="res://assets/char/Body/Body_2.png" id="15_f3s2d"]
 [ext_resource type="Texture2D" uid="uid://b6ee3sy5b3qe4" path="res://assets/char/ArmFront/ArmFront_2.png" id="16_3iq1q"]
 [ext_resource type="Script" uid="uid://lbql10o5570w" path="res://game_world/char/player_input.gd" id="18_paj6h"]
+[ext_resource type="Texture2D" uid="uid://hkvkaisktqfk" path="res://assets/char/Waist/Waist_4.png" id="19_7q2ad"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_v42oa"]
 properties/0/path = NodePath("PlayerInput:direction")
@@ -1095,7 +1096,7 @@ internal_vertex_count = 2
 [node name="Pupil" type="Polygon2D" parent="Polygons" unique_id=2024429786]
 texture_filter = 1
 use_parent_material = true
-texture = ExtResource("6_cfrs6")
+texture = ExtResource("10_g7j7w")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(72.00003, 32.000015, 72.00003, 128.00003, 183.99997, 128.00003, 183.99997, 32.000015, 72, 127.999985, 72, 127.999985)
 uv = PackedVector2Array(72.00003, 32.000015, 72.00003, 128.00003, 183.99997, 128.00003, 183.99997, 32.000015, 72, 127.999985, 72, 127.999985)
@@ -1189,7 +1190,7 @@ bones = ["Hip", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso", PackedFloat32Array(
 
 [node name="Waist" type="Polygon2D" parent="Polygons" unique_id=778708237]
 texture_filter = 1
-texture = ExtResource("18_u7rc2")
+texture = ExtResource("19_7q2ad")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(72.25198, 149.40811, 68.68404, 233.7008, 198.91402, 237.71474, 188.21019, 149.40811)
 uv = PackedVector2Array(72.25198, 149.40811, 68.68404, 233.7008, 198.91402, 237.71474, 188.21019, 149.40811)
@@ -1236,7 +1237,7 @@ auto_calculate_length_and_angle = false
 length = 50.0
 bone_angle = -90.0
 
-[node name="BackShoulder" type="Bone2D" parent="Skeleton2D/Hip/Torso" unique_id=1083368302]
+[node name="BackShoulder" type="Bone2D" parent="Skeleton2D/Hip/Torso" unique_id=1083368302 groups=["height_bone"]]
 position = Vector2(20, -20)
 rest = Transform2D(1, 0, 0, 1, 20, -20)
 
@@ -1251,7 +1252,7 @@ auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 90.0
 
-[node name="FrontShoulder" type="Bone2D" parent="Skeleton2D/Hip/Torso" unique_id=2056491106]
+[node name="FrontShoulder" type="Bone2D" parent="Skeleton2D/Hip/Torso" unique_id=2056491106 groups=["height_bone"]]
 position = Vector2(-21, -17)
 rest = Transform2D(1, 0, 0, 1, -21, -17)
 
@@ -1266,7 +1267,7 @@ auto_calculate_length_and_angle = false
 length = 16.0
 bone_angle = 90.0
 
-[node name="FrontHip" type="Bone2D" parent="Skeleton2D/Hip" unique_id=1391531887]
+[node name="FrontHip" type="Bone2D" parent="Skeleton2D/Hip" unique_id=1391531887 groups=["height_bone"]]
 position = Vector2(-15, 3)
 rest = Transform2D(1, 0, 0, 1, -15, 3)
 
@@ -1278,7 +1279,7 @@ rest = Transform2D(1, 0, 0, 1, 2, 33)
 position = Vector2(-5, 37)
 rest = Transform2D(1, 0, 0, 1, -5, 37)
 
-[node name="BackHip" type="Bone2D" parent="Skeleton2D/Hip" unique_id=2031674531]
+[node name="BackHip" type="Bone2D" parent="Skeleton2D/Hip" unique_id=2031674531 groups=["height_bone"]]
 position = Vector2(9, 2)
 rest = Transform2D(1, 0, 0, 1, 9, 2)
 

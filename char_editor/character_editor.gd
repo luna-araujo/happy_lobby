@@ -29,12 +29,17 @@ func setup_options():
 			option.value_changed.connect(on_char_options_changed.bind(option.modified_polygons))
 		elif  option is ColorPickerOption:
 			option.value_changed.connect(on_char_color_changed.bind(option.option_id))
+		elif option is HeightOption:
+			option.value_changed.connect(on_char_height_changed)
+
 
 func update_options():
 	for option in char_customization_options:
 		if option is CharCustomizeOption:
 			option.set_index(get_customization_index(character,option.modified_polygons[0]),true)
 
+func on_char_height_changed(new_height:float):
+	character.set_height(new_height)
 
 func on_char_options_changed(index:int, options:Array[String]):
 	for option in options:

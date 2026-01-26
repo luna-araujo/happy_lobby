@@ -12,6 +12,7 @@ var animation_player:AnimationPlayer
 var input:PlayerInput = null
 
 var polygons:Array[Polygon2D]
+var skeleton:Skeleton2D = null
 var char_name:String = "noName"
 var skin_tone:Color = Color("f2b089")
 var height:float = 1;
@@ -19,6 +20,7 @@ var height:float = 1;
 
 func _ready() -> void:
 	$Polygons.get_children().map(func (x): polygons.append(x))
+	skeleton = $Skeleton2D
 	animation_player = $AnimationPlayer
 	input = $PlayerInput
 
@@ -27,6 +29,15 @@ func play_anim_once(anim_name:String):
 	animation_player.play(anim_name)
 	await animation_player.animation_finished
 	animation_player.play("idle")
+
+func set_height(new_height:float):
+	var all_bones:Array[Bone2D]
+	for i in skeleton.get_bone_count():
+		all_bones.append(skeleton.get_bone(i))
+	for bone in all_bones:
+		if bone.is_in_group("height_bone"):
+			bone.scale.y = new_height
+	height = new_height
 
 func get_polygons_material() -> ShaderMaterial:
 	return polygons[0].material as ShaderMaterial
