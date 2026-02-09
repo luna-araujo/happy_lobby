@@ -16,6 +16,8 @@ var skeleton:Skeleton2D = null
 var char_name:String = "noName"
 var skin_tone:Color = Color("f2b089")
 var height:float = 1;
+var _suppress_customization_broadcast:bool = false
+var last_customization_json:String = ""
 
 
 func _ready() -> void:
@@ -23,6 +25,11 @@ func _ready() -> void:
 	skeleton = $Skeleton2D
 	animation_player = $AnimationPlayer
 	input = $PlayerInput
+
+	if is_multiplayer_authority():
+		customized.connect(_on_customized_send)
+		if FileAccess.file_exists(LOCAL_PLAYER_FILE):
+			sync_customization_from_local_file()
 
 
 func play_anim_once(anim_name:String):
@@ -91,10 +98,18 @@ static func store_save(character:Character):
 
 static func load_save(character:Character, path:String=""):
 	var json_string = FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.READ).get_as_text()
+	_apply_customization_from_json(character, json_string)
+
+static func _apply_customization_from_json(character:Character, json_string:String) -> void:
 	var json = JSON.new()
 	var error = json.parse(json_string)
 	if error == OK:
-		var data_received:Dictionary = json.data
+		_apply_customization_data(character, json.data)
+	else:
+		print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())
+
+static func _apply_customization_data(character:Character, data_received:Dictionary) -> void:
+	if data_received.has("textures"):
 		var textures:Dictionary = data_received["textures"]
 		character.polygons.map(
 			func (x):
@@ -104,12 +119,47 @@ static func load_save(character:Character, path:String=""):
 				if x.name == texture:
 					x.texture = ResourceLoader.load(textures[texture])
 			return true )
-		if data_received.has("colors"):
-			var char_shader := character.get_material() as ShaderMaterial
-			if char_shader:
-				for param in data_received.colors.keys():
-					var color_value = Color(data_received.colors[param])
-					char_shader.set_shader_parameter(param, color_value)
-		character.customized.emit()
-	else:
-		print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())
+	if data_received.has("colors"):
+		var char_shader := character.get_material() as ShaderMaterial
+		if char_shader:
+			for param in data_received.colors.keys():
+				var color_value = Color(data_received.colors[param])
+				char_shader.set_shader_parameter(param, color_value)
+	character.customized.emit()
+
+func _on_customized_send() -> void:
+	if _suppress_customization_broadcast:
+		return
+	if not is_multiplayer_authority():
+		return
+	if not FileAccess.file_exists(LOCAL_PLAYER_FILE):
+		return
+	var json_string := FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.READ).get_as_text()
+	if json_string.is_empty():
+		return
+	last_customization_json = json_string
+	_rpc_apply_customization.rpc(json_string)
+
+func sync_customization_from_local_file() -> void:
+	if not FileAccess.file_exists(LOCAL_PLAYER_FILE):
+		return
+	var json_string := FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.READ).get_as_text()
+	if json_string.is_empty():
+		return
+	_suppress_customization_broadcast = true
+	_apply_customization_from_json(self, json_string)
+	_suppress_customization_broadcast = false
+	last_customization_json = json_string
+	_rpc_apply_customization.rpc(json_string)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_apply_customization(json_string:String) -> void:
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	if json_string.is_empty():
+		return
+	last_customization_json = json_string
+	_suppress_customization_broadcast = true
+	_apply_customization_from_json(self, json_string)
+	_suppress_customization_broadcast = false

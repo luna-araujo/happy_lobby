@@ -29,6 +29,14 @@ func sync_existing_players() -> void:
 		if character is Character:
 			_spawn_player_on_clients.rpc(character.player_id, character.global_position, character.name)
 
+func sync_customizations_to_peer(peer_id: int) -> void:
+	# Server sends latest customization data to a newly connected client
+	if not multiplayer.is_server():
+		return
+	for character in %PlayerCharacters.get_children():
+		if character is Character and character.last_customization_json != "":
+			character._rpc_apply_customization.rpc_id(peer_id, character.last_customization_json)
+
 
 @rpc("authority", "call_remote", "unreliable")
 func _spawn_player_on_clients(id: int, position: Vector2, player_name: String) -> void:
