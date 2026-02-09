@@ -17,7 +17,8 @@ func _ready() -> void:
 	save_button.pressed.connect(func():
 		Character.store_save(character))
 	load_button.pressed.connect(func():
-		Character.load_save(character))
+		Character.load_save(character)
+		update_options())
 	
 	char_customization_options.assign(get_tree().get_nodes_in_group("char_option"))
 	setup_options()
@@ -37,6 +38,8 @@ func update_options():
 	for option in char_customization_options:
 		if option is CharCustomizeOption:
 			option.set_index(get_customization_index(character,option.modified_polygons[0]),true)
+		elif option is ColorPickerOption:
+			option.sync_from_character(character)
 
 func on_char_height_changed(new_height:float):
 	character.set_height(new_height)
@@ -52,6 +55,20 @@ func on_char_color_changed(new_color:Color,option_name:String):
 	var char_shader:ShaderMaterial = character.get_material()
 	match option_name:
 		"skin_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"hair_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"eyes_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"upper_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"bottom_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"shoes_color":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"accent_upper":
+			char_shader.set_shader_parameter(option_name, new_color)
+		"accent_bottom":
 			char_shader.set_shader_parameter(option_name, new_color)
 
 static func get_customization_options(option_name:String) -> Array:

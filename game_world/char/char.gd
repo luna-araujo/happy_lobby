@@ -59,20 +59,38 @@ func change_polygon_texture(polygon_name:String,texture_path:String):
 
 
 const LOCAL_PLAYER_FILE:String = "user://user_char.json"
+const COLOR_PARAMS:Array[String] = [
+	"skin_color",
+	"hair_color",
+	"eyes_color",
+	"upper_color",
+	"bottom_color",
+	"shoes_color",
+	"accent_upper",
+	"accent_bottom"
+]
 
 static func store_save(character:Character):
 	var save_data = {
-		"textures" : {}
+		"textures" : {},
+		"colors" : {}
 	}
 	for poly in character.polygons:
 		save_data.textures[poly.name] = poly.texture.resource_path
+	
+	var char_shader := character.get_material() as ShaderMaterial
+	if char_shader:
+		for param in COLOR_PARAMS:
+			var value = char_shader.get_shader_parameter(param)
+			if typeof(value) == TYPE_COLOR:
+				save_data.colors[param] = value.to_html(true)
 	
 	var json_string:String = JSON.stringify(save_data,"\t")
 	var file = FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.WRITE)
 	file.store_string(json_string)
 
 static func load_save(character:Character, path:String=""):
-	var json_string = FileAccess.open(path, FileAccess.READ).get_as_text()
+	var json_string = FileAccess.open(LOCAL_PLAYER_FILE, FileAccess.READ).get_as_text()
 	var json = JSON.new()
 	var error = json.parse(json_string)
 	if error == OK:
@@ -86,6 +104,12 @@ static func load_save(character:Character, path:String=""):
 				if x.name == texture:
 					x.texture = ResourceLoader.load(textures[texture])
 			return true )
+		if data_received.has("colors"):
+			var char_shader := character.get_material() as ShaderMaterial
+			if char_shader:
+				for param in data_received.colors.keys():
+					var color_value = Color(data_received.colors[param])
+					char_shader.set_shader_parameter(param, color_value)
 		character.customized.emit()
 	else:
 		print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())

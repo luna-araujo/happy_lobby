@@ -54,9 +54,128 @@ option_id = "skin_color"
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SkinTone"
+text = "Skin Tone"
 
 [node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/SkinToneOption" unique_id=1574333051]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="HairColorOption" type="HBoxContainer" parent="TabContainer/General" unique_id=997092921 groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "hair_color"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/HairColorOption" unique_id=865842029]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Hair Color"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/HairColorOption" unique_id=1617081461]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="EyesColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "eyes_color"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/EyesColorOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Eyes Color"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/EyesColorOption"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="UpperColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "upper_color"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/UpperColorOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Upper Color"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/UpperColorOption"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="BottomColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "bottom_color"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/BottomColorOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Bottom Color"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/BottomColorOption"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="ShoesColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "shoes_color"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/ShoesColorOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Shoes Color"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/ShoesColorOption"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="AccentUpperOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "accent_upper"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentUpperOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Accent Upper"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentUpperOption"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+color = Color(0.9490196, 0.6901961, 0.5372549, 1)
+
+[node name="AccentBottomOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+script = ExtResource("3_ccikj")
+option_id = "accent_bottom"
+
+[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentBottomOption"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Accent Bottom"
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentBottomOption"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
