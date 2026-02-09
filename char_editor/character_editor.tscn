@@ -78,104 +78,104 @@ custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="EyesColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="EyesColorOption" type="HBoxContainer" parent="TabContainer/General" unique_id=1567750950 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "eyes_color"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/EyesColorOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/EyesColorOption" unique_id=430798522]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Eyes Color"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/EyesColorOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/EyesColorOption" unique_id=393075399]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="UpperColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="UpperColorOption" type="HBoxContainer" parent="TabContainer/General" unique_id=1608616411 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "upper_color"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/UpperColorOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/UpperColorOption" unique_id=194425825]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Upper Color"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/UpperColorOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/UpperColorOption" unique_id=835885682]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="BottomColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="BottomColorOption" type="HBoxContainer" parent="TabContainer/General" unique_id=645791469 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "bottom_color"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/BottomColorOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/BottomColorOption" unique_id=1655546933]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Bottom Color"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/BottomColorOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/BottomColorOption" unique_id=1165223123]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="ShoesColorOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="ShoesColorOption" type="HBoxContainer" parent="TabContainer/General" unique_id=1134782417 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "shoes_color"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/ShoesColorOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/ShoesColorOption" unique_id=1873348301]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Shoes Color"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/ShoesColorOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/ShoesColorOption" unique_id=1478268873]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="AccentUpperOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="AccentUpperOption" type="HBoxContainer" parent="TabContainer/General" unique_id=559179796 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "accent_upper"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentUpperOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentUpperOption" unique_id=1837933647]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Accent Upper"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentUpperOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentUpperOption" unique_id=1063743591]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)
 
-[node name="AccentBottomOption" type="HBoxContainer" parent="TabContainer/General" groups=["char_option"]]
+[node name="AccentBottomOption" type="HBoxContainer" parent="TabContainer/General" unique_id=1658563863 groups=["char_option"]]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 script = ExtResource("3_ccikj")
 option_id = "accent_bottom"
 
-[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentBottomOption"]
+[node name="TitleLabel" type="Label" parent="TabContainer/General/AccentBottomOption" unique_id=166871486]
 custom_minimum_size = Vector2(75, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Accent Bottom"
 
-[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentBottomOption"]
+[node name="ColorPickerButton" type="ColorPickerButton" parent="TabContainer/General/AccentBottomOption" unique_id=88928449]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 color = Color(0.9490196, 0.6901961, 0.5372549, 1)

@@ -1190,6 +1190,8 @@ bones = ["Hip", PackedFloat32Array(0, 0, 0, 0), "Hip/Torso", PackedFloat32Array(
 
 [node name="Waist" type="Polygon2D" parent="Polygons" unique_id=778708237]
 texture_filter = 1
+material = ExtResource("4_g7j7w")
+use_parent_material = true
 texture = ExtResource("19_7q2ad")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(72.25198, 149.40811, 68.68404, 233.7008, 198.91402, 237.71474, 188.21019, 149.40811)
