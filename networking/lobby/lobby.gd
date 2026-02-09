@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func join_steam_lobby(this_lobby_id: int) -> void:
 	if NetworkManager:
-		print("Attempting to join lobby %s" % lobby_id)
+		print("Attempting to join lobby %s" % this_lobby_id)
 		lobby_members.clear()
 		Steam.joinLobby(this_lobby_id)
 
@@ -42,7 +42,12 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
 			lobby_id = this_lobby_id
 			get_lobby_members()
-			NetworkManager.make_p2p_handshake()
+			var owner_id := Steam.getLobbyOwner(this_lobby_id)
+			if owner_id == NetworkManager.steam_id:
+				if !multiplayer.is_server():
+					SessionManager.create_steam_host(this_lobby_id)
+				return
+			SessionManager.join_steam_lobby(this_lobby_id)
 		else:
 			var fail_reason: String
 
@@ -77,6 +82,8 @@ func _on_lobby_created(_connect: int, this_lobby_id: int) -> void:
 		# Allow P2P connections to fallback to being relayed through Steam if needed
 		var set_relay: bool = Steam.allowP2PPacketRelay(true)
 		print("Allowing Steam to be relay backup: %s" % set_relay)
+
+		SessionManager.create_steam_host(lobby_id)
 
 func get_lobby_list() -> void:
 	# Set distance to worldwide
