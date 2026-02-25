@@ -86,17 +86,17 @@ material = SubResource("StandardMaterial3D_xychr")
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
 script = ExtResource("2_ko7hc")
 
-[node name="Armature" parent="." index="0" unique_id=91525562]
+[node name="Armature" parent="." index="0" unique_id=51040534]
 script = ExtResource("3_hob7b")
 
-[node name="Skeleton3D" parent="Armature" index="0" unique_id=1071449119]
+[node name="Skeleton3D" parent="Armature" index="0" unique_id=1917071625]
 bones/1/rotation = Quaternion(-3.9731034e-08, 0.9999991, 0.0013297553, -2.98778e-05)
 bones/2/position = Vector3(1.3629407, 1.7070854, 0.03732677)
 bones/3/position = Vector3(-6.5136015e-07, 4.098549, 0.010900396)
 bones/3/rotation = Quaternion(-3.973107e-08, 0.9999991, 0.0013297845, 2.9877796e-05)
 bones/4/position = Vector3(-1.3629447, 1.7070854, 0.037163887)
 
-[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1215225563]
+[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1509899301]
 surface_material_override/0 = SubResource("ShaderMaterial_kr6qn")
 surface_material_override/1 = SubResource("ShaderMaterial_mcikl")
 
@@ -104,7 +104,7 @@ surface_material_override/1 = SubResource("ShaderMaterial_mcikl")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0681973, 0)
 shape = SubResource("CapsuleShape3D_k2brx")
 
-[node name="AnimationPlayer" parent="." index="1" unique_id=107449537]
+[node name="AnimationPlayer" parent="." index="1" unique_id=928356371]
 autoplay = &"Idle"
 
 [node name="ParryFX" type="MeshInstance3D" parent="." index="2" unique_id=1830864215]
@@ -126,13 +126,15 @@ process_material = SubResource("ParticleProcessMaterial_fmcn2")
 draw_pass_1 = SubResource("BoxMesh_k2brx")
 
 [node name="ThirdPersonCamera" type="Node3D" parent="." index="3" unique_id=183585733]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.0935507, 0)
 script = ExtResource("4_1grw4")
+distance = 12.5
+height_offset = 3.0
 
 [node name="Anchor" type="Node3D" parent="ThirdPersonCamera" index="0" unique_id=314668244]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.66432, 0)
 
 [node name="Camera3D" type="Camera3D" parent="ThirdPersonCamera/Anchor" index="0" unique_id=662034746]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.8324976, 1.4012556, -7.9110627)
+transform = Transform3D(-2.5, 0, -2.1855695e-07, 0, 2.5, 0, 2.1855695e-07, 0, -2.5, 0, 0, -17.030458)
 current = true
 fov = 90.0
 

@@ -105,6 +105,23 @@ func get_polygons_material() -> ShaderMaterial:
 	return null
 
 
+func set_color(option_name: String, new_color: Color) -> void:
+	if customization:
+		customization.set_color(option_name, new_color)
+
+
+func get_color(option_name: String) -> Color:
+	if customization:
+		return customization.get_color(option_name)
+	return Color.WHITE
+
+
+func get_available_color_options() -> Array[String]:
+	if customization:
+		return customization.get_available_color_options()
+	return []
+
+
 func change_polygon_texture(polygon_name: String, texture_path: String) -> void:
 	if customization:
 		customization.change_polygon_texture(polygon_name, texture_path)

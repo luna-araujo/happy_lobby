@@ -9,24 +9,39 @@ var color_picker: ColorPickerButton
 
 func _ready() -> void:
 	color_picker = $ColorPickerButton
-	var character:Character = get_node_or_null("%Char")
-	if character:
-		sync_from_character(character)
+
+	var target: Node = get_node_or_null("%Avatar")
+	if not target:
+		target = get_node_or_null("%Char")
+	if target:
+		sync_from_target(target)
+
 	color_picker.color_changed.connect(_on_color_changed)
 
-func sync_from_character(character:Character) -> void:
-	if !character or option_id == "":
+
+func sync_from_character(character: Node) -> void:
+	sync_from_target(character)
+
+
+func sync_from_target(target: Node) -> void:
+	if not target or option_id == "":
 		return
-	var char_shader := character.get_material() as ShaderMaterial
-	if !char_shader:
+	if not target.has_method("get_material"):
 		return
+
+	var char_shader := target.call("get_material") as ShaderMaterial
+	if not char_shader:
+		return
+
 	var current_color = char_shader.get_shader_parameter(option_id)
 	if typeof(current_color) == TYPE_COLOR:
 		color_picker.color = current_color
 		return
+
 	var shader := char_shader.shader
-	if !shader:
+	if not shader:
 		return
+
 	for uniform in shader.get_shader_uniform_list():
 		if uniform is Dictionary and uniform.get("name", "") == option_id:
 			var default_value = uniform.get("default_value", null)
