@@ -1,7 +1,7 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = true # Set to false to disable Steam integration and use local LAN play instead
+const USING_STEAM: bool = false # Set to false to disable Steam integration and use local LAN play instead
 const STEAM_VIRTUAL_PORT: int = 0
 
 signal lobby_joined
@@ -9,9 +9,9 @@ signal lobby_left
 
 var current_user: String = ""
 var steam_id: int = 1
-var player_character:Character = null
+var player_character: Avatar = null
 
-var game_world:GameWorld = null
+var game_world: NeoWorld = null
 var connected_players:Array[Dictionary] = []
 var host_peer_id: int = 1
 
@@ -19,7 +19,9 @@ var peer: MultiplayerPeer = null
 var is_steam_peer: bool = false
 
 func _ready() -> void:
-	game_world = get_tree().get_first_node_in_group("GameWorld") as GameWorld
+	game_world = _find_neo_world()
+	if game_world == null:
+		push_error("NeoWorld node not found. SessionManager cannot spawn players.")
 	NetworkManager.steam_started.connect(_on_steam_started)
 
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
@@ -59,7 +61,9 @@ func create_local_lobby() -> void:
 	
 	# Server spawns itself using the server's unique ID
 	var local_id := multiplayer.get_unique_id()
-	var character = game_world.spawn_player_character(local_id)
+	if game_world == null:
+		return
+	var character := game_world.spawn_player_character(local_id)
 	if character:
 		connected_players.append({
 			"id": local_id,
@@ -80,7 +84,8 @@ func leave_lobby() -> void:
 
 	connected_players.clear()
 	lobby_left.emit()
-	game_world.remove_all_characters()
+	if game_world:
+		game_world.remove_all_characters()
 	print("Left the lobby")
 
 func _on_connected_to_server() -> void:
@@ -100,12 +105,14 @@ func _on_peer_connected(id: int) -> void:
 	
 	# Server spawns the player and handles RPC broadcasting
 	if multiplayer.is_server():
+		if game_world == null:
+			return
 		var username := "Player_%d" % id
 		var player_steam_id := 0
 		if is_steam_peer:
 			player_steam_id = id
 			username = Steam.getFriendPersonaName(id)
-		var character = game_world.spawn_player_character(id)
+		var character := game_world.spawn_player_character(id)
 		connected_players.append({
 			"id": id,
 			"username": username,
@@ -133,7 +140,8 @@ func _on_peer_connected(id: int) -> void:
 func _on_peer_disconnected(id: int) -> void:
 	print("Peer disconnected with ID: %s" % id)
 	if id == multiplayer.get_unique_id() || id == host_peer_id:
-		game_world.remove_all_characters()
+		if game_world:
+			game_world.remove_all_characters()
 		lobby_left.emit()
 		connected_players.clear()
 		return
@@ -146,7 +154,7 @@ func _on_peer_disconnected(id: int) -> void:
 			break
 	
 	# Server removes the authoritative node and broadcasts removal to clients
-	if multiplayer.is_server():
+	if multiplayer.is_server() and game_world:
 		game_world.remove_character_by_id(id)
 
 func create_steam_host(lobby_id: int) -> void:
@@ -170,7 +178,9 @@ func create_steam_host(lobby_id: int) -> void:
 
 	# Server spawns itself using the server's unique ID
 	var local_id := multiplayer.get_unique_id()
-	var character = game_world.spawn_player_character(local_id)
+	if game_world == null:
+		return
+	var character := game_world.spawn_player_character(local_id)
 	if character:
 		connected_players.append({
 			"id": local_id,
@@ -230,3 +240,12 @@ func get_user_os_username():
 		username = "Player" 
 
 	return username
+
+
+func _find_neo_world() -> NeoWorld:
+	var world := get_tree().get_first_node_in_group("NeoWorld") as NeoWorld
+	if world:
+		return world
+
+	world = get_tree().root.find_child("NeoWorld", true, false) as NeoWorld
+	return world

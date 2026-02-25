@@ -1,0 +1,23 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bfgs8euqeerx7"]
+
+[ext_resource type="Shader" uid="uid://cvlikjrjf5gtm" path="res://avatar/effects/shaders/force_shield.gdshader" id="1_force_shield_shader"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_force_shield_shader")
+shader_parameter/shield_color = Color(0.1, 0.7, 1, 1)
+shader_parameter/edge_color = Color(0.6, 0.9, 1, 1)
+shader_parameter/base_opacity = 0.22
+shader_parameter/fresnel_power = 3.0
+shader_parameter/fresnel_strength = 1.2
+shader_parameter/line_density_x = 28.0
+shader_parameter/line_density_y = 18.0
+shader_parameter/line_speed_x = 1.3
+shader_parameter/line_speed_y = -0.9
+shader_parameter/line_intensity = 0.55
+shader_parameter/pulse_speed = 3.0
+shader_parameter/pulse_intensity = 0.35
+shader_parameter/hit_pulse = 0.0
+shader_parameter/height_fade_start = 0.0
+shader_parameter/height_fade_end = 0.2250000106875
+shader_parameter/height_fade_invert = false

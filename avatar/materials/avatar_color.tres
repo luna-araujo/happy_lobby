@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://diusa0bdcsnij"]
+
+[ext_resource type="Shader" uid="uid://ehviu7el0s1c" path="res://avatar/shaders/avatar.gdshader" id="1_qgfeh"]
+
+[resource]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("1_qgfeh")
+shader_parameter/base_color = Color(0.05958981, 0.37908173, 0.7411243, 1)
+shader_parameter/shadow_strength = 0.45
+shader_parameter/mid_strength = 0.15
+shader_parameter/light_strength = 0.25
+shader_parameter/shadow_threshold = 0.25
+shader_parameter/light_threshold = 0.65
+shader_parameter/rim_threshold = 0.7
+shader_parameter/rim_lighten = 0.3
+shader_parameter/hit_glow = 0.0

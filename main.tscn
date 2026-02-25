@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://cfloiyh8ohrpl" path="res://ui_components/find_lobby_button.gd" id="2_h2yge"]
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://ui_components/create_lobby_button.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://ui_components/join_lobby_button.gd" id="3_lquwl"]
-[ext_resource type="PackedScene" uid="uid://d3pa5gt5w0d3c" path="res://game_world/game_world.tscn" id="6_7mycd"]
+[ext_resource type="PackedScene" uid="uid://da6np2odmdu88" path="res://game_world/NeoWorld.tscn" id="6_7mycd"]
 
 [node name="Main" type="Node" unique_id=2063291942]
 
@@ -16,8 +16,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="ColorRect" type="ColorRect" parent="MainMenu" unique_id=826420004]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -78,5 +80,4 @@ layout_mode = 2
 text = "Create Lobby"
 script = ExtResource("3_1bvp3")
 
-[node name="GameWorld" parent="." unique_id=1406878422 groups=["GameWorld"] instance=ExtResource("6_7mycd")]
-unique_name_in_owner = true
+[node name="NeoWorld" parent="." unique_id=462384816 instance=ExtResource("6_7mycd")]

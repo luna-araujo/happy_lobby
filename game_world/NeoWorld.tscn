@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://da6np2odmdu88"]
+
+[ext_resource type="Script" uid="uid://bjlxinlsnd0h2" path="res://game_world/neo_world.gd" id="1_ah4wi"]
+
+[sub_resource type="Environment" id="Environment_rm8wl"]
+
+[sub_resource type="BoxShape3D" id="GroundShape_neo"]
+size = Vector3(80, 1, 80)
+
+[sub_resource type="StandardMaterial3D" id="GroundMaterial_neo"]
+albedo_color = Color(0.24, 0.27, 0.3, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="GroundMesh_neo"]
+material = SubResource("GroundMaterial_neo")
+size = Vector3(80, 1, 80)
+
+[sub_resource type="BoxShape3D" id="BlockShape_A"]
+size = Vector3(4, 3, 4)
+
+[sub_resource type="StandardMaterial3D" id="BlockMaterial_neo"]
+albedo_color = Color(0.46, 0.48, 0.52, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BlockMesh_A"]
+material = SubResource("BlockMaterial_neo")
+size = Vector3(4, 3, 4)
+
+[sub_resource type="BoxShape3D" id="BlockShape_B"]
+size = Vector3(8, 2, 8)
+
+[sub_resource type="BoxMesh" id="BlockMesh_B"]
+material = SubResource("BlockMaterial_neo")
+size = Vector3(8, 2, 8)
+
+[sub_resource type="BoxShape3D" id="WallShape_neo"]
+size = Vector3(2, 4, 24)
+
+[sub_resource type="BoxMesh" id="WallMesh_neo"]
+material = SubResource("BlockMaterial_neo")
+size = Vector3(2, 4, 24)
+
+[node name="NeoWorld" type="Node3D" unique_id=462384816]
+script = ExtResource("1_ah4wi")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=657289430]
+environment = SubResource("Environment_rm8wl")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1530166476]
+transform = Transform3D(-0.92165196, 0.10743517, -0.37284714, -0.3713866, -0.5225553, 0.7674685, -0.112380296, 0.84580964, 0.5215142, 0, 12.427674, 0)
+light_energy = 1.4
+shadow_enabled = true
+
+[node name="Sandbox" type="Node3D" parent="." unique_id=444879157]
+
+[node name="Ground" type="StaticBody3D" parent="Sandbox" unique_id=613924637]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Sandbox/Ground" unique_id=1392417545]
+shape = SubResource("GroundShape_neo")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Sandbox/Ground" unique_id=136138014]
+mesh = SubResource("GroundMesh_neo")
+
+[node name="CenterBlock" type="StaticBody3D" parent="Sandbox" unique_id=1255468332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.5, 2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Sandbox/CenterBlock" unique_id=1044747467]
+shape = SubResource("BlockShape_A")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Sandbox/CenterBlock" unique_id=980096049]
+mesh = SubResource("BlockMesh_A")
+
+[node name="RaisedPlatform" type="StaticBody3D" parent="Sandbox" unique_id=495309265]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Sandbox/RaisedPlatform" unique_id=623392021]
+shape = SubResource("BlockShape_B")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Sandbox/RaisedPlatform" unique_id=681195612]
+mesh = SubResource("BlockMesh_B")
+
+[node name="BoundaryWall" type="StaticBody3D" parent="Sandbox" unique_id=1687309972]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Sandbox/BoundaryWall" unique_id=1610505200]
+shape = SubResource("WallShape_neo")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Sandbox/BoundaryWall" unique_id=1018987576]
+mesh = SubResource("WallMesh_neo")
+
+[node name="PlayerCharacters" type="Node3D" parent="." unique_id=321150875]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=232581419]
+transform = Transform3D(1, 0, 0, 0, 0.89141816, 0.45318162, 0, -0.45318162, 0.89141816, 0, 19.54468, 38.0506)

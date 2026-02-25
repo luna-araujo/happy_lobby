@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://2qyfbbw2j6ph"]
+
+[ext_resource type="PackedScene" uid="uid://ivhqkcs2un2s" path="res://assets/avatar/avatar.glb" id="1_bnsy6"]
+[ext_resource type="Script" uid="uid://duun1kfukm6gm" path="res://avatar/scripts/avatar.gd" id="2_ko7hc"]
+[ext_resource type="Script" uid="uid://ckex81ptqgb0y" path="res://avatar/scripts/avatar_movement.gd" id="3_hob7b"]
+[ext_resource type="Shader" uid="uid://cbpwulbiio4j0" path="res://avatar/shaders/avatar_outline.gdshader" id="3_tsqth"]
+[ext_resource type="Script" uid="uid://cojd82gkstp1x" path="res://avatar/scripts/third_person_camera.gd" id="4_1grw4"]
+[ext_resource type="Shader" uid="uid://ehviu7el0s1c" path="res://avatar/shaders/avatar.gdshader" id="4_hob7b"]
+[ext_resource type="Material" uid="uid://bfgs8euqeerx7" path="res://avatar/effects/materials/force_shield.tres" id="5_tsqth"]
+[ext_resource type="Script" uid="uid://pi0gmsinan1j" path="res://avatar/scripts/avatar_customization.gd" id="6_tvj50"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7rsio"]
+render_priority = 0
+shader = ExtResource("3_tsqth")
+shader_parameter/outline_width_px = 2.0
+shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kr6qn"]
+resource_local_to_scene = true
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_7rsio")
+shader = ExtResource("4_hob7b")
+shader_parameter/base_color = Color(0.05958981, 0.37908173, 0.7411243, 1)
+shader_parameter/shadow_strength = 0.45
+shader_parameter/mid_strength = 0.15
+shader_parameter/light_strength = 0.25
+shader_parameter/shadow_threshold = 0.25
+shader_parameter/light_threshold = 0.65
+shader_parameter/rim_threshold = 0.7
+shader_parameter/rim_lighten = 0.3
+shader_parameter/hit_glow = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i2pr5"]
+render_priority = 0
+shader = ExtResource("3_tsqth")
+shader_parameter/outline_width_px = 2.00000007125
+shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mcikl"]
+resource_local_to_scene = true
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_i2pr5")
+shader = ExtResource("4_hob7b")
+shader_parameter/base_color = Color(0.75, 0.65, 0.55, 1)
+shader_parameter/shadow_strength = 0.45
+shader_parameter/mid_strength = 0.15
+shader_parameter/light_strength = 0.25
+shader_parameter/shadow_threshold = 0.0910000043225
+shader_parameter/light_threshold = 0.8150000387125
+shader_parameter/rim_threshold = 0.5050000239875
+shader_parameter/rim_lighten = 0.0
+shader_parameter/hit_glow = 0.0
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_k2brx"]
+radius = 1.1713867
+height = 5.905945
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
+top_radius = 2.352
+bottom_radius = 2.352
+height = 7.556
+radial_segments = 6
+rings = 1
+cap_top = false
+cap_bottom = false
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fmcn2"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 4.0
+emission_ring_radius = 2.0
+emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
+inherit_velocity_ratio = 0.656
+spread = 117.614
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xychr"]
+shading_mode = 0
+diffuse_mode = 3
+specular_mode = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_k2brx"]
+material = SubResource("StandardMaterial3D_xychr")
+
+[node name="Avatar" unique_id=750895988 instance=ExtResource("1_bnsy6")]
+transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
+script = ExtResource("2_ko7hc")
+
+[node name="Armature" parent="." index="0" unique_id=91525562]
+script = ExtResource("3_hob7b")
+
+[node name="Skeleton3D" parent="Armature" index="0" unique_id=1071449119]
+bones/1/rotation = Quaternion(-3.9731034e-08, 0.9999991, 0.0013297553, -2.98778e-05)
+bones/2/position = Vector3(1.3629407, 1.7070854, 0.03732677)
+bones/3/position = Vector3(-6.5136015e-07, 4.098549, 0.010900396)
+bones/3/rotation = Quaternion(-3.973107e-08, 0.9999991, 0.0013297845, 2.9877796e-05)
+bones/4/position = Vector3(-1.3629447, 1.7070854, 0.037163887)
+
+[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1215225563]
+surface_material_override/0 = SubResource("ShaderMaterial_kr6qn")
+surface_material_override/1 = SubResource("ShaderMaterial_mcikl")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Armature" index="1" unique_id=900483586]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0681973, 0)
+shape = SubResource("CapsuleShape3D_k2brx")
+
+[node name="AnimationPlayer" parent="." index="1" unique_id=107449537]
+autoplay = &"Idle"
+
+[node name="ParryFX" type="MeshInstance3D" parent="." index="2" unique_id=1830864215]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.71, 0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_hob7b")
+surface_material_override/0 = ExtResource("5_tsqth")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="ParryFX" index="0" unique_id=1396407431]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+emitting = false
+amount = 50
+lifetime = 1.5
+one_shot = true
+explosiveness = 1.0
+randomness = 0.35
+process_material = SubResource("ParticleProcessMaterial_fmcn2")
+draw_pass_1 = SubResource("BoxMesh_k2brx")
+
+[node name="ThirdPersonCamera" type="Node3D" parent="." index="3" unique_id=183585733]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.0935507, 0)
+script = ExtResource("4_1grw4")
+
+[node name="Anchor" type="Node3D" parent="ThirdPersonCamera" index="0" unique_id=314668244]
+
+[node name="Camera3D" type="Camera3D" parent="ThirdPersonCamera/Anchor" index="0" unique_id=662034746]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.8324976, 1.4012556, -7.9110627)
+current = true
+fov = 90.0
+
+[node name="AvatarCustomization" type="Node" parent="." index="4" unique_id=304234968]
+script = ExtResource("6_tvj50")

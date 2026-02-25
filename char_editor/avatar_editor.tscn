@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://3ok0h177ppe4"]
+
+[ext_resource type="Script" uid="uid://hx5qyd8gc8aa" path="res://char_editor/avatar_editor.gd" id="1_mqe78"]
+
+[node name="AvatarEditor" type="Node3D" unique_id=377663125]
+script = ExtResource("1_mqe78")
