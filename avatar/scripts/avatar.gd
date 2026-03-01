@@ -260,9 +260,10 @@ func _process(_delta: float) -> void:
 	_update_debug_overlay(true)
 
 
-func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
-	if multiplayer.is_server() and not _is_local_controlled():
-		_rpc_sync_combat_state.rpc(new_state)
+func _on_combat_state_changed(previous_state: int, new_state: int) -> void:
+	var is_actual_transition: bool = previous_state != new_state
+	if multiplayer.is_server() and not _is_local_controlled() and is_actual_transition:
+		_send_combat_state_sync_to_owner(new_state)
 	if parry_fx:
 		parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
 	if health_bar:
@@ -629,7 +630,29 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 	if target_avatar.combat:
 		var synced_hp: int = target_avatar.combat.hp
 		var synced_max_hp: int = target_avatar.combat.max_hp
-		target_avatar._rpc_sync_health.rpc(synced_hp, synced_max_hp)
+		target_avatar._send_health_sync_to_owner(synced_hp, synced_max_hp)
+
+
+func _send_combat_state_sync_to_owner(new_state: int) -> void:
+	var local_peer_id: int = _get_local_peer_id_if_connected()
+	if player_id <= 0:
+		return
+	if player_id == local_peer_id:
+		return
+	if not _is_connected_peer(player_id):
+		return
+	_rpc_sync_combat_state.rpc_id(player_id, new_state)
+
+
+func _send_health_sync_to_owner(new_hp: int, new_max_hp: int) -> void:
+	var local_peer_id: int = _get_local_peer_id_if_connected()
+	if player_id <= 0:
+		return
+	if player_id == local_peer_id:
+		return
+	if not _is_connected_peer(player_id):
+		return
+	_rpc_sync_health.rpc_id(player_id, new_hp, new_max_hp)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -728,6 +751,29 @@ func _resolve_host_peer_id() -> int:
 		if peer_id < resolved_host_id:
 			resolved_host_id = peer_id
 	return resolved_host_id
+
+
+func _is_connected_peer(peer_id: int) -> bool:
+	if peer_id <= 0:
+		return false
+	var connected_peers: PackedInt32Array = multiplayer.get_peers()
+	return connected_peers.has(peer_id)
+
+
+func _get_local_peer_id_if_connected() -> int:
+	if not multiplayer.has_multiplayer_peer():
+		return -1
+
+	var multiplayer_peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	if multiplayer_peer == null:
+		return -1
+	if multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return -1
+
+	var local_peer_id: int = multiplayer.get_unique_id()
+	if local_peer_id <= 0:
+		return -1
+	return local_peer_id
 
 
 func _resolve_session_host_peer_id() -> int:
