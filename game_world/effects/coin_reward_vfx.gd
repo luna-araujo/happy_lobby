@@ -125,11 +125,15 @@ func _build_coin_sound_stream() -> AudioStreamWAV:
 func _apply_gold_material_to_coin() -> void:
 	if _coin_visual_root == null:
 		return
-	var mesh_nodes: Array = _coin_visual_root.find_children("*", "MeshInstance3D", true, false)
+	var mesh_nodes: Array[MeshInstance3D] = []
+	if _coin_visual_root is MeshInstance3D:
+		mesh_nodes.append(_coin_visual_root as MeshInstance3D)
+	var discovered_nodes: Array = _coin_visual_root.find_children("*", "MeshInstance3D", true, false)
+	for discovered in discovered_nodes:
+		if discovered is MeshInstance3D:
+			mesh_nodes.append(discovered as MeshInstance3D)
 	for mesh_node in mesh_nodes:
-		if not (mesh_node is MeshInstance3D):
-			continue
-		var mesh_instance: MeshInstance3D = mesh_node as MeshInstance3D
+		var mesh_instance: MeshInstance3D = mesh_node
 		var gold_material: StandardMaterial3D = StandardMaterial3D.new()
 		gold_material.albedo_color = coin_base_color
 		gold_material.metallic = 1.0
