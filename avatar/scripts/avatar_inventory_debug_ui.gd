@@ -26,8 +26,8 @@ func _ready() -> void:
 	_refresh_view()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not _is_active_for_local_player:
+func _input(event: InputEvent) -> void:
+	if not _can_toggle():
 		return
 	if event.is_action_pressed(toggle_action):
 		_set_panel_visible(not _is_panel_visible())
@@ -168,3 +168,12 @@ func _set_panel_visible(is_visible: bool) -> void:
 	if _panel_root == null:
 		return
 	_panel_root.visible = is_visible
+
+
+func _can_toggle() -> bool:
+	if _is_active_for_local_player:
+		return true
+	var avatar: Avatar = get_parent() as Avatar
+	if avatar == null:
+		return false
+	return avatar._is_local_controlled()
