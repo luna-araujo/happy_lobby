@@ -5,7 +5,7 @@ const AVATAR_SCENE: PackedScene = preload("res://avatar/scenes/avatar.tscn")
 @export var spawn_area_size: float = 20.0
 
 
-func spawn_player_character(id: int) -> Avatar:
+func spawn_player_character(id: int, username: String = "") -> Avatar:
 	# Server spawns a new player avatar and notifies clients.
 	if not multiplayer.is_server():
 		return null
@@ -13,6 +13,7 @@ func spawn_player_character(id: int) -> Avatar:
 	var player_avatar := AVATAR_SCENE.instantiate() as Avatar
 	player_avatar.player_id = id
 	player_avatar.name = "Player_%s" % id
+	player_avatar.display_name = username if not username.is_empty() else player_avatar.name
 	player_avatar.set_multiplayer_authority(id)
 	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.position = Vector3(
@@ -21,7 +22,7 @@ func spawn_player_character(id: int) -> Avatar:
 		randf_range(-spawn_area_size, spawn_area_size)
 	)
 
-	_spawn_player_on_clients.rpc(id, player_avatar.global_position, player_avatar.name)
+	_spawn_player_on_clients.rpc(id, player_avatar.global_position, player_avatar.name, player_avatar.display_name)
 	return player_avatar
 
 
@@ -32,7 +33,7 @@ func sync_existing_players() -> void:
 
 	for avatar in %PlayerCharacters.get_children():
 		if avatar is Avatar:
-			_spawn_player_on_clients.rpc(avatar.player_id, avatar.global_position, avatar.name)
+			_spawn_player_on_clients.rpc(avatar.player_id, avatar.global_position, avatar.name, avatar.display_name)
 
 
 func sync_customizations_to_peer(peer_id: int) -> void:
@@ -46,7 +47,7 @@ func sync_customizations_to_peer(peer_id: int) -> void:
 
 
 @rpc("authority", "call_remote", "unreliable")
-func _spawn_player_on_clients(id: int, position: Vector3, player_name: String) -> void:
+func _spawn_player_on_clients(id: int, position: Vector3, player_name: String, username: String) -> void:
 	# Clients execute this to create a local representation.
 	if multiplayer.is_server():
 		return
@@ -60,6 +61,7 @@ func _spawn_player_on_clients(id: int, position: Vector3, player_name: String) -
 	player_avatar.player_id = id
 	player_avatar.set_multiplayer_authority(id)
 	player_avatar.name = player_name
+	player_avatar.display_name = username if not username.is_empty() else player_name
 	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.global_position = position
 

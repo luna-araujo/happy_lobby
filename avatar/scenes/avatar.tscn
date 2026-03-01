@@ -16,8 +16,10 @@
 [ext_resource type="Animation" uid="uid://cpuuqe51bhdwm" path="res://avatar/animations/parry.anim" id="10_wth05"]
 [ext_resource type="Animation" uid="uid://d3kdpqfdrhdb" path="res://avatar/animations/run.anim" id="11_cicn1"]
 [ext_resource type="Animation" uid="uid://cqdvf1p1ofef5" path="res://avatar/animations/stun.anim" id="12_crnoc"]
-[ext_resource type="AnimationNodeStateMachine" uid="uid://4t66n82m0rja" path="res://avatar/animations/anim_tree.tres" id="14_s4lrm"]
-[ext_resource type="Script" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
+[ext_resource type="AnimationNodeStateMachine" uid="uid://cnq7wdfl5avvo" path="res://avatar/animations/anim_tree.tres" id="14_s4lrm"]
+[ext_resource type="Script" uid="uid://c2pxmdnqi5xhr" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
+[ext_resource type="Script" uid="uid://befkpl4atq0v8" path="res://avatar/scripts/avatar_healthbar.gd" id="21_v6bhq"]
+[ext_resource type="Script" uid="uid://bo3s6y1y07udf" path="res://avatar/scripts/avatar_melee_controller.gd" id="22_f7k2s"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -52,7 +54,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.0
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_260y4"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cicn1"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_7rsio")
@@ -73,7 +75,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.00000007125
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wth05"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crnoc"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_i2pr5")
@@ -88,9 +90,15 @@ shader_parameter/rim_threshold = 0.5050000239875
 shader_parameter/rim_lighten = 0.0
 shader_parameter/hit_glow = 0.0
 
+[sub_resource type="SphereShape3D" id="SphereShape3D_heavy_melee"]
+radius = 2.0
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_k2brx"]
 radius = 1.1713867
 height = 5.905945
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_quick_melee"]
+size = Vector3(2.2, 2.2, 2.8)
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_ywx11"]
 _data = {
@@ -106,7 +114,7 @@ _data = {
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
 script = ExtResource("2_ko7hc")
 
-[node name="Armature" parent="." index="0" unique_id=1788504691]
+[node name="Armature" parent="." index="0" unique_id=1940947775]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 script = ExtResource("3_hob7b")
 jump_speed_multiplier = 3.0
@@ -131,28 +139,57 @@ randomness = 0.35
 process_material = SubResource("ParticleProcessMaterial_fmcn2")
 draw_pass_1 = SubResource("BoxMesh_k2brx")
 
-[node name="Skeleton3D" parent="Armature" index="1" unique_id=31233995]
-bones/1/scale = Vector3(0.995941, 0.99594134, 0.99594104)
-bones/2/position = Vector3(1.4460976, 1.1357661, 0.06351851)
-bones/3/rotation = Quaternion(0.042060535, 0.93960065, 0.33768934, -0.036710676)
-bones/4/position = Vector3(-1.4301324, 1.2183746, 0.04693816)
+[node name="Skeleton3D" parent="Armature" index="1" unique_id=2085907571]
+bones/1/rotation = Quaternion(1.1142167e-06, 0.9993045, -0.03729248, -2.9857034e-05)
+bones/2/position = Vector3(1.0926714, 4.2697687, 0.4427371)
+bones/2/rotation = Quaternion(2.0772786e-05, 0.715268, -0.6988503, 2.1453956e-05)
+bones/2/scale = Vector3(2.3595529, 2.3595538, 2.359553)
+bones/3/rotation = Quaternion(3.6163585e-06, 0.9926478, -0.12103824, 2.9658153e-05)
+bones/4/position = Vector3(-0.95397174, 1.9259034, 0.7863068)
 
-[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=497237384]
-surface_material_override/0 = SubResource("ShaderMaterial_260y4")
-surface_material_override/1 = SubResource("ShaderMaterial_wth05")
+[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1498472455]
+surface_material_override/0 = SubResource("ShaderMaterial_cicn1")
+surface_material_override/1 = SubResource("ShaderMaterial_crnoc")
+
+[node name="LHand" type="BoneAttachment3D" parent="Armature/Skeleton3D" index="1" unique_id=1431740651]
+transform = Transform3D(2.3595529, 8.754432e-08, -6.3517336e-07, -6.4069627e-07, 0.23044589, -2.348274, -2.5087502e-08, 2.348274, 0.23044616, -1.0926979, 4.2249002, -0.7596797)
+bone_name = "L.Hand"
+bone_idx = 2
+
+[node name="HeavyMeleeHitbox" type="Area3D" parent="Armature/Skeleton3D/LHand" index="0" unique_id=1594076428]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Armature/Skeleton3D/LHand/HeavyMeleeHitbox" index="0" unique_id=97591355]
+shape = SubResource("SphereShape3D_heavy_melee")
+debug_color = Color(0.9642144, 0.14822191, 0.31210807, 0.41960785)
+
+[node name="RHand" type="BoneAttachment3D" parent="Armature/Skeleton3D" index="2" unique_id=1695591456]
+transform = Transform3D(1, 3.157038e-08, 2.069345e-07, 2.0388052e-07, 0.077185, -0.9970171, -4.7453796e-08, 0.99701715, 0.077185, 0.9539248, 1.8619372, -0.9277202)
+bone_name = "R.Hand"
+bone_idx = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Armature" index="2" unique_id=900483586]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0681973, 0)
 shape = SubResource("CapsuleShape3D_k2brx")
+debug_color = Color(0.41960785, 0.6, 0.2509804, 0.41960785)
 
-[node name="AnimationPlayer" parent="." index="1" unique_id=1628559675]
+[node name="QuickMeleeHitbox" type="Area3D" parent="Armature" index="3" unique_id=1138095956]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Armature/QuickMeleeHitbox" index="0" unique_id=635215704]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9099154e-07, 3.3000002, 2.672422)
+shape = SubResource("BoxShape3D_quick_melee")
+debug_color = Color(0.9647059, 0.14901961, 0.3137255, 0.41960785)
+
+[node name="AnimationPlayer" parent="." index="1" unique_id=1224620146]
 libraries/anim = SubResource("AnimationLibrary_ywx11")
 autoplay = &"idle"
 script = ExtResource("7_acn83")
 
 [node name="AnimationTree" type="AnimationTree" parent="." index="2" unique_id=2048553066]
 tree_root = ExtResource("14_s4lrm")
-anim_player = NodePath("../AnimationPlayer")
 parameters/Locomotion/blend_position = 0.0
 
 [node name="ThirdPersonCamera" type="Node3D" parent="." index="3" unique_id=183585733]
@@ -165,7 +202,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.66432, 0)
 
 [node name="Camera3D" type="Camera3D" parent="ThirdPersonCamera/Anchor" index="0" unique_id=662034746]
 transform = Transform3D(-2.5, 0, -2.1855695e-07, 0, 2.5, 0, 2.1855695e-07, 0, -2.5, 0, 0, -17.030458)
-current = false
 fov = 90.0
 
 [node name="AvatarCustomization" type="Node" parent="." index="4" unique_id=304234968]
@@ -174,5 +210,12 @@ script = ExtResource("6_tvj50")
 [node name="CharacterCombat" type="Node" parent="." index="5" unique_id=1371078824]
 script = ExtResource("8_66k0b")
 
-[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="6"]
+[node name="MeleeController" type="Node" parent="." index="6" unique_id=900169493]
+script = ExtResource("22_f7k2s")
+
+[node name="HealthBar" type="Node3D" parent="." index="7" unique_id=1808842437]
+script = ExtResource("21_v6bhq")
+height_offset = 3.0
+
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="8" unique_id=2020533423]
 script = ExtResource("20_w4c3n")

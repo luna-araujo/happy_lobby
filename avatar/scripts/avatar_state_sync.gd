@@ -21,6 +21,9 @@ func _build_replication_config() -> SceneReplicationConfig:
 	_add_property(config, NodePath(":network_animation_state"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_move_speed"), SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
 	_add_property(config, NodePath(":network_combat_state"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	_add_property(config, NodePath(":network_hp"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	_add_property(config, NodePath(":network_max_hp"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	_add_property(config, NodePath(":network_display_name"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 
 	return config
 

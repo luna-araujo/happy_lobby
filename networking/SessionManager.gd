@@ -1,7 +1,7 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = false # Set to false to disable Steam integration and use local LAN play instead
+const USING_STEAM: bool = true # Set to false to disable Steam integration and use local LAN play instead
 const STEAM_VIRTUAL_PORT: int = 0
 
 signal lobby_joined
@@ -63,11 +63,12 @@ func create_local_lobby() -> void:
 	var local_id := multiplayer.get_unique_id()
 	if game_world == null:
 		return
-	var character := game_world.spawn_player_character(local_id)
+	var host_username: String = get_user_os_username()
+	var character := game_world.spawn_player_character(local_id, host_username)
 	if character:
 		connected_players.append({
 			"id": local_id,
-			"username": get_user_os_username(),
+			"username": host_username,
 			"steam_id": steam_id,
 			"character": character
 		})
@@ -112,7 +113,7 @@ func _on_peer_connected(id: int) -> void:
 		if is_steam_peer:
 			player_steam_id = id
 			username = Steam.getFriendPersonaName(id)
-		var character := game_world.spawn_player_character(id)
+		var character := game_world.spawn_player_character(id, username)
 		connected_players.append({
 			"id": id,
 			"username": username,
@@ -180,11 +181,12 @@ func create_steam_host(lobby_id: int) -> void:
 	var local_id := multiplayer.get_unique_id()
 	if game_world == null:
 		return
-	var character := game_world.spawn_player_character(local_id)
+	var host_username: String = current_user if not current_user.is_empty() else "Player_%d" % local_id
+	var character := game_world.spawn_player_character(local_id, host_username)
 	if character:
 		connected_players.append({
 			"id": local_id,
-			"username": current_user,
+			"username": host_username,
 			"steam_id": steam_id,
 			"character": character
 		})
@@ -227,8 +229,8 @@ func _set_peer(new_peer: MultiplayerPeer, using_steam_peer: bool) -> void:
 	peer = new_peer
 	is_steam_peer = using_steam_peer
 
-func get_user_os_username():
-	var username = ""
+func get_user_os_username() -> String:
+	var username: String = ""
 	# Check for the 'USER' environment variable (common on Linux, macOS, Android)
 	if OS.has_environment("USER"):
 		username = OS.get_environment("USER")

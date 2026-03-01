@@ -20,6 +20,7 @@ If `godot4` is not in `PATH`, use the local editor binary configured in `.vscode
 ## Coding Style & Naming Conventions
 Follow existing GDScript conventions in this repo:
 - Use 4-space indentation and UTF-8 encoding.
+- Always use explicit type annotations in GDScript; never rely on `:=` type inference.
 - Prefer `class_name` scripts for reusable components.
 - Scene files use `snake_case.tscn`; script files use matching `snake_case.gd`.
 - Keep autoload responsibilities centralized (`NetworkManager`, `SessionManager`) instead of duplicating state.

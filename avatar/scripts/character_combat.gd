@@ -24,6 +24,9 @@ enum CombatState {
 @export var parry_duration: float = 0.35
 @export var parry_cooldown: float = 0.6
 @export var default_stun_duration: float = 1.0
+@export var debug_auto_revive_enabled: bool = true
+@export var debug_auto_revive_delay: float = 1.0
+@export var debug_auto_revive_hp: int = 100
 
 var state: int = CombatState.READY
 var _state_token: int = 0
@@ -154,6 +157,7 @@ func kill() -> void:
 	_set_state(CombatState.DEAD)
 	hp_changed.emit(hp, max_hp)
 	died.emit()
+	_schedule_debug_auto_revive()
 
 
 func revive(revive_hp: int = -1) -> bool:
@@ -169,6 +173,28 @@ func revive(revive_hp: int = -1) -> bool:
 	hp_changed.emit(hp, max_hp)
 	revived.emit()
 	return true
+
+
+func _schedule_debug_auto_revive() -> void:
+	if not debug_auto_revive_enabled:
+		return
+
+	var delay_seconds: float = maxf(debug_auto_revive_delay, 0.01)
+	_debug_auto_revive_after_delay(delay_seconds)
+
+
+func _debug_auto_revive_after_delay(delay_seconds: float) -> void:
+	await get_tree().create_timer(delay_seconds).timeout
+	if is_queued_for_deletion():
+		return
+	if state != CombatState.DEAD:
+		return
+
+	var revive_hp_value: int = debug_auto_revive_hp
+	if revive_hp_value <= 0:
+		revive()
+	else:
+		revive(revive_hp_value)
 
 
 func _can_start_action() -> bool:
