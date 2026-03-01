@@ -26,6 +26,7 @@ var _hit_flash_in_duration: float = 0.04
 var _hit_flash_out_duration: float = 0.18
 @export var parry_fx_path: NodePath = NodePath("Armature/ParryFX")
 @export var heavy_melee_hold_threshold: float = 0.25
+@export var parry_counter_stun_duration: float = 1.5
 @export var show_combat_debug: bool = true
 
 const ATTACK_TYPE_QUICK: int = 0
@@ -611,6 +612,15 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 	if not overlap_valid and not range_valid:
 		return
 
+	if target_avatar.combat and target_avatar.combat.state == CharacterCombat.CombatState.PARRYING:
+		var should_stun_attacker: bool = combat.state != CharacterCombat.CombatState.STUNNED
+		if should_stun_attacker:
+			var stun_duration: float = maxf(parry_counter_stun_duration, 0.01)
+			var stunned: bool = stun(stun_duration)
+			if stunned and combat:
+				_rpc_sync_combat_state.rpc(combat.state)
+		return
+
 	melee_controller.mark_target_hit(target_avatar, attack_type)
 	var applied_damage: int = target_avatar.apply_damage(amount)
 	if applied_damage <= 0:
@@ -619,6 +629,23 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 		var synced_hp: int = target_avatar.combat.hp
 		var synced_max_hp: int = target_avatar.combat.max_hp
 		target_avatar._rpc_sync_health.rpc(synced_hp, synced_max_hp)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_sync_combat_state(new_state: int) -> void:
+	if multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	var host_id: int = _resolve_host_peer_id()
+	if sender_id != host_id:
+		return
+
+	_apply_synced_combat_state(new_state)
+
+
+func _apply_synced_combat_state(new_state: int) -> void:
+	_network_combat_state = new_state
+	_apply_network_combat_state(new_state)
 
 
 @rpc("any_peer", "call_remote", "reliable")
