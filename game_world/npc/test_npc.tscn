@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://avatar/scripts/character_combat.gd" id="3_combat"]
 [ext_resource type="Script" path="res://avatar/scripts/avatar_healthbar.gd" id="4_healthbar"]
 [ext_resource type="Script" path="res://game_world/npc/test_npc_state_sync.gd" id="5_sync"]
+[ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://inventory/scripts/inventory.gd" id="6_inventory"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_npc"]
 radius = 0.5
@@ -36,3 +37,6 @@ status_panel_height = 20
 
 [node name="StateSync" type="MultiplayerSynchronizer" parent="."]
 script = ExtResource("5_sync")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("6_inventory")

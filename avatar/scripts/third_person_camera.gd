@@ -55,7 +55,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var motion := event as InputEventMouseMotion
+		var motion: InputEventMouseMotion = event as InputEventMouseMotion
 		_yaw -= motion.relative.x * sensitivity
 		_pitch -= motion.relative.y * sensitivity
 		_pitch = clampf(
@@ -66,10 +66,6 @@ func _input(event: InputEvent) -> void:
 		rotation.y = _yaw
 		anchor.rotation.x = _pitch
 
-	if event.is_action_pressed("camera_release"):
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 
 func _update_camera_distance() -> void:
@@ -113,10 +109,12 @@ func set_active(active: bool) -> void:
 
 	camera_3d.current = false
 	if capture_mouse_on_ready and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if UIManager != null:
+			UIManager.release_mouse()
 
 
 func make_current() -> void:
 	camera_3d.make_current()
 	if capture_mouse_on_ready:
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if UIManager != null:
+			UIManager.capture_mouse()

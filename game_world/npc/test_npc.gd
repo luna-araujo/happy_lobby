@@ -3,6 +3,7 @@ extends CharacterBody3D
 
 const DUCK_HIT_SHADER: Shader = preload("res://avatar/shaders/avatar.gdshader")
 const COIN_REWARD_VFX_SCENE: PackedScene = preload("res://game_world/effects/coin_reward_vfx.tscn")
+const BERETTA_ITEM_DATA_PATH: String = "res://items/beretta/beretta_item_data.tres"
 
 @export var npc_id: int = 0
 @export var display_name: String = ""
@@ -13,23 +14,49 @@ const COIN_REWARD_VFX_SCENE: PackedScene = preload("res://game_world/effects/coi
 @export var wander_radius: float = 18.0
 @export var target_repath_min_seconds: float = 1.0
 @export var target_repath_max_seconds: float = 2.8
-@export var respawn_delay_seconds: float = 2.0
 @export var gravity_scale: float = 1.0
 @export var kill_reward_money: int = 5
+@export var loot_interaction_range: float = 2.5
 @export var duck_base_color: Color = Color(0.95, 0.84, 0.28, 1.0)
 @export var duck_hit_flash_color: Color = Color(1.0, 0.2, 0.2, 1.0)
 
 var combat: CharacterCombat
 var health_bar: AvatarHealthBar
+var inventory: Inventory
 var _wander_center: Vector3 = Vector3.ZERO
 var _wander_target: Vector3 = Vector3.ZERO
 var _next_repath_time_seconds: float = 0.0
-var _respawn_pending: bool = false
 var _hit_flash_tween: Tween
 var _hit_flash_peak: float = 1.0
 var _hit_flash_in_duration: float = 0.04
 var _hit_flash_out_duration: float = 0.18
 var _duck_hit_materials: Array[ShaderMaterial] = []
+var _applying_network_inventory_state: bool = false
+
+var _network_inventory_slots_json: String = "[]"
+var network_inventory_slots_json: String:
+	get:
+		return _network_inventory_slots_json
+	set(value):
+		if _network_inventory_slots_json == value:
+			return
+		_network_inventory_slots_json = value
+		if is_multiplayer_authority():
+			return
+		_apply_network_inventory_state()
+
+var _network_inventory_money: int = 0
+var network_inventory_money: int:
+	get:
+		return _network_inventory_money
+	set(value):
+		var clamped_value: int = maxi(value, 0)
+		if _network_inventory_money == clamped_value:
+			return
+		_network_inventory_money = clamped_value
+		if is_multiplayer_authority():
+			return
+		_apply_network_inventory_state()
 
 
 func _ready() -> void:
@@ -38,6 +65,7 @@ func _ready() -> void:
 
 	combat = get_node_or_null("CharacterCombat") as CharacterCombat
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
+	inventory = get_node_or_null("Inventory") as Inventory
 
 	if combat != null:
 		if not combat.died.is_connected(_on_combat_died):
@@ -48,6 +76,17 @@ func _ready() -> void:
 			combat.state_changed.connect(_on_state_changed)
 		if not combat.damaged.is_connected(_on_damaged):
 			combat.damaged.connect(_on_damaged)
+
+	if inventory != null:
+		if not inventory.inventory_changed.is_connected(_on_inventory_changed):
+			inventory.inventory_changed.connect(_on_inventory_changed)
+		if not inventory.money_changed.is_connected(_on_inventory_money_changed):
+			inventory.money_changed.connect(_on_inventory_money_changed)
+		if is_multiplayer_authority():
+			_seed_loot_inventory()
+			_sync_network_inventory_from_authority()
+		else:
+			_apply_network_inventory_state()
 
 	if display_name.strip_edges().is_empty():
 		display_name = "Duck_%d" % npc_id
@@ -121,13 +160,87 @@ func set_wander_center(center_position: Vector3, radius: float) -> void:
 	_pick_new_wander_target()
 
 
+func is_dead() -> bool:
+	if combat == null:
+		return false
+	return combat.state == CharacterCombat.CombatState.DEAD
+
+
+func has_loot() -> bool:
+	if inventory == null:
+		return false
+	for slot_data in inventory.get_slots():
+		if not slot_data.is_empty():
+			return true
+	return false
+
+
+func can_be_looted_by(player_peer_id: int, max_distance: float) -> bool:
+	if player_peer_id <= 0:
+		return false
+	if not is_dead():
+		return false
+	if not has_loot():
+		return false
+	var avatar: Avatar = _find_avatar_by_player_id(player_peer_id)
+	if avatar == null:
+		return false
+	var allowed_range: float = maxf(max_distance, 0.1)
+	var avatar_position: Vector3 = _get_avatar_interaction_position(avatar)
+	return avatar_position.distance_to(global_position) <= allowed_range
+
+
+func try_loot_transfer_to_player(player_peer_id: int, from_slot: int, _preferred_player_slot: int = -1) -> bool:
+	if not multiplayer.is_server():
+		return false
+	if not can_be_looted_by(player_peer_id, loot_interaction_range):
+		return false
+	if inventory == null:
+		return false
+
+	var source_slot: Dictionary = inventory.get_slot(from_slot)
+	if source_slot.is_empty():
+		return false
+	var item_data_path: String = String(source_slot.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return false
+	var source_quantity: int = int(source_slot.get("quantity", 0))
+	if source_quantity <= 0:
+		return false
+
+	var avatar: Avatar = _find_avatar_by_player_id(player_peer_id)
+	if avatar == null:
+		return false
+	if avatar.inventory == null:
+		return false
+
+	var remaining: int = avatar.inventory.add_item(item_data_path, source_quantity)
+	var moved_amount: int = source_quantity - remaining
+	if moved_amount <= 0:
+		return false
+
+	var new_quantity: int = source_quantity - moved_amount
+	if new_quantity <= 0:
+		inventory.clear_slot(from_slot)
+	else:
+		inventory.set_slot(from_slot, item_data_path, new_quantity)
+
+	if _is_inventory_empty():
+		_despawn_corpse()
+	return true
+
+
 func _update_wander_motion(delta: float) -> void:
 	if combat == null:
 		return
 
-	var is_dead: bool = combat.state == CharacterCombat.CombatState.DEAD
+	var is_npc_dead: bool = combat.state == CharacterCombat.CombatState.DEAD
+	if is_npc_dead:
+		velocity = Vector3.ZERO
+		return
+
 	var is_stunned: bool = combat.state == CharacterCombat.CombatState.STUNNED
-	var can_move: bool = not is_dead and not is_stunned
+	var can_move: bool = not is_stunned
 
 	if not is_on_floor():
 		var gravity: Vector3 = get_gravity() * maxf(gravity_scale, 0.01)
@@ -172,38 +285,12 @@ func _pick_new_wander_target() -> void:
 
 
 func _on_combat_died() -> void:
-	if _respawn_pending:
-		return
-	_respawn_pending = true
 	if not is_multiplayer_authority():
 		return
-	_respawn_after_delay()
-
-
-func _respawn_after_delay() -> void:
-	var delay_seconds: float = maxf(respawn_delay_seconds, 0.1)
-	await get_tree().create_timer(delay_seconds).timeout
-	if is_queued_for_deletion():
-		return
-	if combat == null:
-		return
-
-	if combat.state == CharacterCombat.CombatState.DEAD:
-		combat.revive()
-	global_position = _random_spawn_point()
 	velocity = Vector3.ZERO
-	_pick_new_wander_target()
-	_respawn_pending = false
-
-
-func _random_spawn_point() -> Vector3:
-	var radius: float = maxf(wander_radius, 1.0)
-	var offset: Vector3 = Vector3(
-		randf_range(-radius, radius),
-		0.0,
-		randf_range(-radius, radius)
-	)
-	return _wander_center + offset
+	_sync_network_inventory_from_authority()
+	if _is_inventory_empty():
+		_despawn_corpse()
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
@@ -302,6 +389,84 @@ func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
 		for child in children:
 			if child is Node:
 				stack.push_back(child)
+	return null
+
+
+func _get_avatar_interaction_position(avatar: Avatar) -> Vector3:
+	if avatar == null:
+		return Vector3.ZERO
+	if avatar.movement_body != null and is_instance_valid(avatar.movement_body):
+		return avatar.movement_body.global_position
+	return avatar.global_position
+
+
+func _seed_loot_inventory() -> void:
+	if inventory == null:
+		return
+	if inventory.has_item(BERETTA_ITEM_DATA_PATH, 1):
+		return
+	inventory.try_grant_item(BERETTA_ITEM_DATA_PATH, 1)
+
+
+func _on_inventory_changed() -> void:
+	if inventory == null:
+		return
+	if _applying_network_inventory_state:
+		return
+	if not is_multiplayer_authority():
+		return
+	_sync_network_inventory_from_authority()
+	if is_dead() and _is_inventory_empty():
+		_despawn_corpse()
+
+
+func _on_inventory_money_changed(_new_money: int) -> void:
+	_on_inventory_changed()
+
+
+func _sync_network_inventory_from_authority() -> void:
+	if inventory == null:
+		return
+	network_inventory_slots_json = inventory.serialize_slots_json()
+	network_inventory_money = inventory.get_money()
+
+
+func _apply_network_inventory_state() -> void:
+	if inventory == null:
+		return
+	if is_multiplayer_authority():
+		return
+	_applying_network_inventory_state = true
+	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
+	_applying_network_inventory_state = false
+
+
+func _is_inventory_empty() -> bool:
+	if inventory == null:
+		return true
+	for slot_data in inventory.get_slots():
+		if not slot_data.is_empty():
+			return false
+	return true
+
+
+func _despawn_corpse() -> void:
+	if not is_multiplayer_authority():
+		return
+	var world_node: Node = _find_world_root()
+	if world_node is NeoWorld:
+		var world: NeoWorld = world_node as NeoWorld
+		world.remove_test_npc_by_id(npc_id)
+		return
+	queue_free()
+
+
+func _find_world_root() -> Node:
+	var current: Node = self
+	while current != null:
+		if current is NeoWorld:
+			return current
+		current = current.get_parent()
 	return null
 
 

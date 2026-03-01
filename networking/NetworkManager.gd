@@ -25,14 +25,14 @@ var steam_image: ImageTexture
 var ui_language: String
 
 
-var lobby:Lobby = Lobby.new()
+var lobby: Lobby = Lobby.new()
 
 func _init() -> void:
 	using_steam = SessionManager.USING_STEAM
 
 	add_child(lobby)
 
-	if !using_steam:
+	if not using_steam:
 		print("Steam is not available.")
 		steam_id = get_local_user_id()
 		steam_username = get_user_os_username()

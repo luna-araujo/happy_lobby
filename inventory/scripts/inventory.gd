@@ -11,6 +11,7 @@ signal slot_changed(slot_index: int)
 var money: int = 0
 var _slots: Array[Dictionary] = []
 var _suppress_signals: bool = false
+var _item_data_cache: Dictionary = {}
 
 
 func _ready() -> void:
@@ -40,15 +41,15 @@ func is_slot_empty(slot_index: int) -> bool:
 	return _slots[slot_index].is_empty()
 
 
-func find_first_slot_with_item(item_id: String) -> int:
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty():
+func find_first_slot_with_item(item_data_path: String) -> int:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
 		return -1
 	for slot_index in range(_slots.size()):
 		var slot_data: Dictionary = _slots[slot_index]
 		if slot_data.is_empty():
 			continue
-		if String(slot_data.get("item_id", "")) == normalized_item_id:
+		if String(slot_data.get("item_data_path", "")) == normalized_item_data_path:
 			return slot_index
 	return -1
 
@@ -60,62 +61,64 @@ func find_first_empty_slot() -> int:
 	return -1
 
 
-func count_item(item_id: String) -> int:
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty():
+func count_item(item_data_path: String) -> int:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
 		return 0
 	var total_quantity: int = 0
 	for slot_data in _slots:
 		if slot_data.is_empty():
 			continue
-		if String(slot_data.get("item_id", "")) != normalized_item_id:
+		if String(slot_data.get("item_data_path", "")) != normalized_item_data_path:
 			continue
 		total_quantity += int(slot_data.get("quantity", 0))
 	return total_quantity
 
 
-func has_item(item_id: String, quantity: int = 1) -> bool:
+func has_item(item_data_path: String, quantity: int = 1) -> bool:
 	if quantity <= 0:
 		return false
-	return count_item(item_id) >= quantity
+	return count_item(item_data_path) >= quantity
 
 
-func can_add_item(item_id: String, quantity: int) -> bool:
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty():
+func can_add_item(item_data_path: String, quantity: int) -> bool:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
 		return false
 	if quantity <= 0:
 		return false
+
+	var stack_limit: int = _resolve_item_max_stack(normalized_item_data_path)
 	var remaining: int = quantity
 	for slot_data in _slots:
 		if slot_data.is_empty():
-			remaining -= max_stack_per_slot
-		elif String(slot_data.get("item_id", "")) == normalized_item_id:
+			remaining -= stack_limit
+		elif String(slot_data.get("item_data_path", "")) == normalized_item_data_path:
 			var current_quantity: int = int(slot_data.get("quantity", 0))
-			var free_space: int = max_stack_per_slot - current_quantity
+			var free_space: int = stack_limit - current_quantity
 			remaining -= maxi(free_space, 0)
 		if remaining <= 0:
 			return true
 	return false
 
 
-func try_grant_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> bool:
+func try_grant_item(item_data_path: String, quantity: int = 1) -> bool:
 	if quantity <= 0:
 		return false
-	if not can_add_item(item_id, quantity):
+	if not can_add_item(item_data_path, quantity):
 		return false
-	var remaining: int = add_item(item_id, quantity, metadata)
+	var remaining: int = add_item(item_data_path, quantity)
 	return remaining == 0
 
 
-func try_buy_item(item_id: String, price: int, quantity: int = 1, metadata: Dictionary = {}) -> bool:
+func try_buy_item(item_data_path: String, price: int, quantity: int = 1) -> bool:
 	if not _can_mutate():
 		return false
 	if price < 0:
 		return false
 	if quantity <= 0:
 		return false
-	if not can_add_item(item_id, quantity):
+	if not can_add_item(item_data_path, quantity):
 		return false
 	if money < price:
 		return false
@@ -123,17 +126,17 @@ func try_buy_item(item_id: String, price: int, quantity: int = 1, metadata: Dict
 	var spent: bool = _set_money_internal(previous_money - price)
 	if not spent and price > 0:
 		return false
-	var remaining: int = add_item(item_id, quantity, metadata)
+	var remaining: int = add_item(item_data_path, quantity)
 	if remaining == 0:
 		return true
 	_set_money_internal(previous_money)
 	return false
 
 
-func try_drop_item(item_id: String, quantity: int = 1) -> bool:
+func try_drop_item(item_data_path: String, quantity: int = 1) -> bool:
 	if quantity <= 0:
 		return false
-	var removed_amount: int = remove_item(item_id, quantity)
+	var removed_amount: int = remove_item(item_data_path, quantity)
 	return removed_amount == quantity
 
 
@@ -161,16 +164,16 @@ func spend_money(cost: int) -> bool:
 	return _set_money_internal(money - cost)
 
 
-func add_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> int:
+func add_item(item_data_path: String, quantity: int = 1) -> int:
 	if not _can_mutate():
 		return quantity
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty():
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
 		return quantity
 	if quantity <= 0:
 		return 0
 
-	var normalized_metadata: Dictionary = metadata.duplicate(true)
+	var stack_limit: int = _resolve_item_max_stack(normalized_item_data_path)
 	var remaining: int = quantity
 
 	for slot_index in range(_slots.size()):
@@ -179,12 +182,12 @@ func add_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> 
 		var slot_data: Dictionary = _slots[slot_index]
 		if slot_data.is_empty():
 			continue
-		if String(slot_data.get("item_id", "")) != normalized_item_id:
+		if String(slot_data.get("item_data_path", "")) != normalized_item_data_path:
 			continue
 		var current_quantity: int = int(slot_data.get("quantity", 0))
-		if current_quantity >= max_stack_per_slot:
+		if current_quantity >= stack_limit:
 			continue
-		var add_amount: int = mini(max_stack_per_slot - current_quantity, remaining)
+		var add_amount: int = mini(stack_limit - current_quantity, remaining)
 		slot_data["quantity"] = current_quantity + add_amount
 		_slots[slot_index] = _normalize_slot(slot_data)
 		remaining -= add_amount
@@ -195,11 +198,10 @@ func add_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> 
 			break
 		if not _slots[slot_index].is_empty():
 			continue
-		var add_amount: int = mini(max_stack_per_slot, remaining)
+		var add_amount: int = mini(stack_limit, remaining)
 		var created_slot: Dictionary = {
-			"item_id": normalized_item_id,
-			"quantity": add_amount,
-			"metadata": normalized_metadata.duplicate(true)
+			"item_data_path": normalized_item_data_path,
+			"quantity": add_amount
 		}
 		_slots[slot_index] = _normalize_slot(created_slot)
 		remaining -= add_amount
@@ -210,11 +212,11 @@ func add_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> 
 	return remaining
 
 
-func remove_item(item_id: String, quantity: int = 1) -> int:
+func remove_item(item_data_path: String, quantity: int = 1) -> int:
 	if not _can_mutate():
 		return 0
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty():
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
 		return 0
 	if quantity <= 0:
 		return 0
@@ -227,7 +229,7 @@ func remove_item(item_id: String, quantity: int = 1) -> int:
 		var slot_data: Dictionary = _slots[slot_index]
 		if slot_data.is_empty():
 			continue
-		if String(slot_data.get("item_id", "")) != normalized_item_id:
+		if String(slot_data.get("item_data_path", "")) != normalized_item_data_path:
 			continue
 		var current_quantity: int = int(slot_data.get("quantity", 0))
 		var remove_amount: int = mini(current_quantity, remaining)
@@ -246,22 +248,21 @@ func remove_item(item_id: String, quantity: int = 1) -> int:
 	return removed_total
 
 
-func set_slot(slot_index: int, item_id: String, quantity: int, metadata: Dictionary = {}) -> bool:
+func set_slot(slot_index: int, item_data_path: String, quantity: int) -> bool:
 	if not _can_mutate():
 		return false
 	if not _is_valid_slot_index(slot_index):
 		return false
-	var normalized_item_id: String = item_id.strip_edges()
-	if normalized_item_id.is_empty() or quantity <= 0:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty() or quantity <= 0:
 		_slots[slot_index] = {}
 		_emit_slot_changed(slot_index)
 		_emit_inventory_changed()
 		return true
 
 	var slot_data: Dictionary = {
-		"item_id": normalized_item_id,
-		"quantity": quantity,
-		"metadata": metadata.duplicate(true)
+		"item_data_path": normalized_item_data_path,
+		"quantity": quantity
 	}
 	_slots[slot_index] = _normalize_slot(slot_data)
 	_emit_slot_changed(slot_index)
@@ -318,13 +319,14 @@ func split_stack(from_slot: int, to_slot: int, quantity: int) -> bool:
 	if quantity >= source_quantity:
 		return false
 
-	var split_quantity: int = mini(quantity, max_stack_per_slot)
+	var source_item_data_path: String = String(source.get("item_data_path", ""))
+	var source_stack_limit: int = _resolve_item_max_stack(source_item_data_path)
+	var split_quantity: int = mini(quantity, source_stack_limit)
 	source["quantity"] = source_quantity - split_quantity
 	_slots[from_slot] = _normalize_slot(source)
 	_slots[to_slot] = _normalize_slot({
-		"item_id": String(source.get("item_id", "")),
-		"quantity": split_quantity,
-		"metadata": Dictionary(source.get("metadata", {})).duplicate(true)
+		"item_data_path": source_item_data_path,
+		"quantity": split_quantity
 	})
 	_emit_slot_changed(from_slot)
 	_emit_slot_changed(to_slot)
@@ -344,12 +346,14 @@ func merge_stack(from_slot: int, to_slot: int) -> bool:
 	var target: Dictionary = _slots[to_slot]
 	if source.is_empty() or target.is_empty():
 		return false
-	if String(source.get("item_id", "")) != String(target.get("item_id", "")):
+	if String(source.get("item_data_path", "")) != String(target.get("item_data_path", "")):
 		return false
 
+	var target_item_data_path: String = String(target.get("item_data_path", ""))
+	var stack_limit: int = _resolve_item_max_stack(target_item_data_path)
 	var source_quantity: int = int(source.get("quantity", 0))
 	var target_quantity: int = int(target.get("quantity", 0))
-	var free_space: int = max_stack_per_slot - target_quantity
+	var free_space: int = stack_limit - target_quantity
 	if free_space <= 0:
 		return false
 	var move_quantity: int = mini(source_quantity, free_space)
@@ -417,20 +421,45 @@ func _empty_slot_array() -> Array[Dictionary]:
 
 
 func _normalize_slot(slot_data: Dictionary) -> Dictionary:
-	var item_id: String = String(slot_data.get("item_id", "")).strip_edges()
-	if item_id.is_empty():
+	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
 		return {}
 	var quantity: int = int(slot_data.get("quantity", 0))
-	quantity = clampi(quantity, 1, maxi(max_stack_per_slot, 1))
-	var metadata_variant: Variant = slot_data.get("metadata", {})
-	var metadata: Dictionary = {}
-	if typeof(metadata_variant) == TYPE_DICTIONARY:
-		metadata = (metadata_variant as Dictionary).duplicate(true)
+	var stack_limit: int = _resolve_item_max_stack(item_data_path)
+	quantity = clampi(quantity, 1, stack_limit)
 	return {
-		"item_id": item_id,
-		"quantity": quantity,
-		"metadata": metadata
+		"item_data_path": item_data_path,
+		"quantity": quantity
 	}
+
+
+func _resolve_item_max_stack(item_data_path: String) -> int:
+	var resolved_max: int = maxi(max_stack_per_slot, 1)
+	var item_data: Resource = _resolve_item_data(item_data_path)
+	if item_data == null:
+		return resolved_max
+	var max_stack_variant: Variant = item_data.get("max_stack")
+	if typeof(max_stack_variant) == TYPE_INT:
+		resolved_max = mini(resolved_max, maxi(int(max_stack_variant), 1))
+	return maxi(resolved_max, 1)
+
+
+func _resolve_item_data(item_data_path: String) -> Resource:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
+		return null
+	if _item_data_cache.has(normalized_item_data_path):
+		var cached_variant: Variant = _item_data_cache.get(normalized_item_data_path)
+		if cached_variant is Resource:
+			return cached_variant as Resource
+		return null
+
+	var loaded_resource: Resource = load(normalized_item_data_path)
+	if loaded_resource != null:
+		_item_data_cache[normalized_item_data_path] = loaded_resource
+		return loaded_resource
+	_item_data_cache[normalized_item_data_path] = null
+	return null
 
 
 func _set_slots_internal(new_slots: Array[Dictionary]) -> void:

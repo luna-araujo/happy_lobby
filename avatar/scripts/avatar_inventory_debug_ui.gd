@@ -3,10 +3,10 @@ extends CanvasLayer
 
 @export var inventory_path: NodePath = NodePath("../Inventory")
 @export var toggle_action: StringName = &"inventory_debug_toggle"
-@export var sample_item_id: String = "test_item"
+@export var sample_item_data_path: String = "res://items/beretta/beretta_item_data.tres"
 @export var sample_item_quantity: int = 1
 @export var money_delta_amount: int = 10
-@export var beretta_item_id: String = "items.beretta"
+@export var beretta_item_data_path: String = "res://items/beretta/beretta_item_data.tres"
 @export var beretta_buy_price: int = 50
 
 var inventory: Inventory
@@ -151,13 +151,9 @@ func _refresh_view() -> void:
 		if slot_data.is_empty():
 			lines.append("[%d] <empty>" % slot_index)
 			continue
-		var item_id: String = String(slot_data.get("item_id", ""))
+		var item_data_path: String = String(slot_data.get("item_data_path", ""))
 		var quantity: int = int(slot_data.get("quantity", 0))
-		var metadata_variant: Variant = slot_data.get("metadata", {})
-		var metadata: Dictionary = {}
-		if typeof(metadata_variant) == TYPE_DICTIONARY:
-			metadata = (metadata_variant as Dictionary).duplicate(true)
-		lines.append("[%d] %s x%d meta=%s" % [slot_index, item_id, quantity, JSON.stringify(metadata)])
+		lines.append("[%d] %s x%d" % [slot_index, item_data_path, quantity])
 	_slots_label.text = "\n".join(lines)
 
 
@@ -172,8 +168,8 @@ func _on_add_item_pressed() -> void:
 	if not _can_mutate_inventory():
 		_set_status("Inventory authority denied.")
 		return
-	inventory.add_item(sample_item_id, sample_item_quantity, {"source": "debug_ui"})
-	_set_status("Added %s x%d." % [sample_item_id, sample_item_quantity])
+	inventory.add_item(sample_item_data_path, sample_item_quantity)
+	_set_status("Added %s x%d." % [sample_item_data_path, sample_item_quantity])
 	_refresh_view()
 
 
@@ -184,8 +180,8 @@ func _on_remove_item_pressed() -> void:
 	if not _can_mutate_inventory():
 		_set_status("Inventory authority denied.")
 		return
-	var removed: int = inventory.remove_item(sample_item_id, sample_item_quantity)
-	_set_status("Removed %s x%d." % [sample_item_id, removed])
+	var removed: int = inventory.remove_item(sample_item_data_path, sample_item_quantity)
+	_set_status("Removed %s x%d." % [sample_item_data_path, removed])
 	_refresh_view()
 
 
@@ -226,7 +222,7 @@ func _on_grant_beretta_pressed() -> void:
 	if not _can_mutate_inventory():
 		_set_status("Inventory authority denied.")
 		return
-	var granted: bool = inventory.try_grant_item(beretta_item_id, 1, {"source": "debug_ui"})
+	var granted: bool = inventory.try_grant_item(beretta_item_data_path, 1)
 	if granted:
 		_set_status("Granted Beretta.")
 	else:

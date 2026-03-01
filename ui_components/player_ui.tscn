@@ -1,12 +1,12 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dbi6jduedmmsd"]
 
-[ext_resource type="Script" path="res://ui_components/player_ui.gd" id="1_player_ui_script"]
+[ext_resource type="Script" uid="uid://c3nqm1te3nhad" path="res://ui_components/player_ui.gd" id="1_player_ui_script"]
 [ext_resource type="PackedScene" path="res://inventory/inventory_ui.tscn" id="2_inventory_ui_scene"]
 
-[node name="PlayerUI" type="CanvasLayer"]
+[node name="PlayerUI" type="CanvasLayer" unique_id=2134681793 groups=["player_ui"]]
 script = ExtResource("1_player_ui_script")
 
-[node name="Root" type="Control" parent="."]
+[node name="Root" type="Control" parent="." unique_id=1848201290]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,56 +15,88 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="Root"]
+[node name="BottomLeftHud" type="PanelContainer" parent="Root" unique_id=1259820116]
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 1
-anchors_preset = 0
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = 16.0
-offset_right = 412.0
-offset_bottom = 640.0
+offset_top = -140.0
+offset_right = 336.0
+offset_bottom = -16.0
+grow_vertical = 0
+size_flags_horizontal = 0
+size_flags_vertical = 0
 
-[node name="Margin" type="MarginContainer" parent="Root/Panel"]
+[node name="Margin" type="MarginContainer" parent="Root/BottomLeftHud" unique_id=976011033]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBox" type="VBoxContainer" parent="Root/Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="Root/BottomLeftHud/Margin" unique_id=592384590]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
-[node name="PlayerName" type="Label" parent="Root/Panel/Margin/VBox"]
+[node name="PlayerName" type="Label" parent="Root/BottomLeftHud/Margin/VBox" unique_id=1163145045]
 layout_mode = 2
 text = "No Player"
-horizontal_alignment = 1
 
-[node name="HpBar" type="ProgressBar" parent="Root/Panel/Margin/VBox"]
+[node name="HpBar" type="ProgressBar" parent="Root/BottomLeftHud/Margin/VBox" unique_id=260559224]
 layout_mode = 2
-max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="HpLabel" type="Label" parent="Root/Panel/Margin/VBox"]
+[node name="StatusList" type="VBoxContainer" parent="Root/BottomLeftHud/Margin/VBox" unique_id=1346147492]
 layout_mode = 2
-text = "HP: --/--"
-horizontal_alignment = 1
+theme_override_constants/separation = 2
 
-[node name="StatusValue" type="Label" parent="Root/Panel/Margin/VBox"]
-layout_mode = 2
-text = "Status: --"
-horizontal_alignment = 1
+[node name="InventoryUi" parent="Root" unique_id=269773895 instance=ExtResource("2_inventory_ui_scene")]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+offset_left = -420.0
+offset_top = -280.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
 
-[node name="StatusDetails" type="Label" parent="Root/Panel/Margin/VBox"]
-layout_mode = 2
-text = "No combat data."
-horizontal_alignment = 1
-autowrap_mode = 2
+[node name="LootInventoryUi" parent="Root" unique_id=182001224 instance=ExtResource("2_inventory_ui_scene")]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+offset_left = -828.0
+offset_top = -280.0
+offset_right = -424.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
 
-[node name="InventoryUi" parent="Root/Panel/Margin/VBox" instance=ExtResource("2_inventory_ui_scene")]
-custom_minimum_size = Vector2(0, 420)
+[node name="InteractionPrompt" type="PanelContainer" parent="Root" unique_id=414090335]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_bottom = 44.0
+grow_horizontal = 0
+
+[node name="Margin" type="MarginContainer" parent="Root/InteractionPrompt" unique_id=1640830581]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
+
+[node name="PromptLabel" type="Label" parent="Root/InteractionPrompt/Margin" unique_id=1935745154]
+layout_mode = 2
+text = "Press E to interact"
+horizontal_alignment = 1

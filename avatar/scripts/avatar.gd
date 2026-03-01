@@ -34,6 +34,7 @@ var parry_fx: Node3D
 var health_bar: AvatarHealthBar
 var melee_controller: AvatarMeleeController
 var gun_controller: AvatarGunController
+var interaction_controller: Node
 var inventory: Inventory
 var inventory_debug_ui: AvatarInventoryDebugUi
 var _hit_flash_tween: Tween
@@ -239,6 +240,7 @@ func _ready() -> void:
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
 	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
 	gun_controller = get_node_or_null("GunController") as AvatarGunController
+	interaction_controller = get_node_or_null("InteractionController")
 	inventory = get_node_or_null("Inventory") as Inventory
 	inventory_debug_ui = get_node_or_null("InventoryDebugUI") as AvatarInventoryDebugUi
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
@@ -273,6 +275,8 @@ func _ready() -> void:
 		printerr("MeleeController node is missing from Avatar scene.")
 	if not gun_controller:
 		printerr("GunController node is missing from Avatar scene.")
+	if not interaction_controller:
+		printerr("InteractionController node is missing from Avatar scene.")
 	if not inventory:
 		printerr("Inventory node is missing from Avatar scene.")
 	else:
@@ -310,7 +314,8 @@ func _exit_tree() -> void:
 	if not should_release_mouse:
 		return
 	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if UIManager != null:
+			UIManager.release_mouse()
 
 
 func _apply_player_authority() -> void:
@@ -360,9 +365,8 @@ func _auto_grant_and_equip_test_beretta() -> void:
 		return
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
 		return
-	var beretta_item_id: String = String(AvatarGunController.ITEM_ID_BERETTA)
-	if not inventory.has_item(beretta_item_id, 1):
-		inventory.try_grant_item(beretta_item_id, 1, {"source": "auto_test_loadout"})
+	if not inventory.has_item(AvatarGunController.BERETTA_ITEM_DATA_PATH, 1):
+		inventory.try_grant_item(AvatarGunController.BERETTA_ITEM_DATA_PATH, 1)
 	gun_controller.equip_item(AvatarGunController.ITEM_ID_BERETTA)
 
 
@@ -642,6 +646,14 @@ func try_drop_beretta() -> bool:
 	if gun_controller == null:
 		return false
 	return gun_controller.try_drop_beretta()
+
+
+func request_loot_transfer(npc_id: int, from_slot: int, preferred_to_slot: int = -1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_loot_transfer"):
+		return
+	interaction_controller.call("request_loot_transfer", npc_id, from_slot, preferred_to_slot)
 
 
 func start_quick_melee() -> bool:

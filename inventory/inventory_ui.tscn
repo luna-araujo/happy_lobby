@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://inventory/scripts/inventory_ui.gd" id="1_inventory_ui_script"]
-
 [node name="InventoryUi" type="Control"]
 anchors_preset = 15
 anchor_right = 1.0
@@ -43,3 +42,5 @@ size_flags_vertical = 3
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 6
 columns = 4
+
+[node name="ContextMenu" type="PopupMenu" parent="."]

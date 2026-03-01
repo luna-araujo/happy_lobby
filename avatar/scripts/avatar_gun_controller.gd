@@ -2,6 +2,7 @@ class_name AvatarGunController
 extends Node
 
 const ITEM_ID_BERETTA: StringName = &"items.beretta"
+const BERETTA_ITEM_DATA_PATH: String = "res://items/beretta/beretta_item_data.tres"
 
 @export var inventory_path: NodePath = NodePath("../Inventory")
 @export var combat_path: NodePath = NodePath("../CharacterCombat")
@@ -89,9 +90,10 @@ func is_gun_equipped() -> bool:
 func equip_item(item_id: StringName) -> bool:
 	if inventory == null:
 		return false
-	if String(item_id).strip_edges().is_empty():
+	var resolved_item_data_path: String = _resolve_item_data_path(item_id)
+	if resolved_item_data_path.is_empty():
 		return false
-	if not inventory.has_item(String(item_id), 1):
+	if not inventory.has_item(resolved_item_data_path, 1):
 		return false
 	_equipped_item_id = item_id
 	_update_visual_equipped_state()
@@ -111,11 +113,7 @@ func try_buy_beretta(price: int) -> bool:
 		return false
 	if inventory == null:
 		return false
-	var metadata: Dictionary = {
-		"equippable": true,
-		"weapon_type": "beretta"
-	}
-	return inventory.try_buy_item(String(ITEM_ID_BERETTA), price, 1, metadata)
+	return inventory.try_buy_item(BERETTA_ITEM_DATA_PATH, price, 1)
 
 
 func try_drop_beretta() -> bool:
@@ -125,10 +123,16 @@ func try_drop_beretta() -> bool:
 		return false
 	if inventory == null:
 		return false
-	var dropped: bool = inventory.try_drop_item(String(ITEM_ID_BERETTA), 1)
+	var dropped: bool = inventory.try_drop_item(BERETTA_ITEM_DATA_PATH, 1)
 	if dropped and _equipped_item_id == ITEM_ID_BERETTA:
 		unequip_current()
 	return dropped
+
+
+func _resolve_item_data_path(item_id: StringName) -> String:
+	if item_id == ITEM_ID_BERETTA:
+		return BERETTA_ITEM_DATA_PATH
+	return ""
 
 
 func set_aiming(aiming: bool) -> void:

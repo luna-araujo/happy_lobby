@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1_item_data_script"]
+[ext_resource type="Texture2D" path="res://assets/items/beretta_icon.png" id="2_beretta_icon"]
+
+[resource]
+script = ExtResource("1_item_data_script")
+item_id = "items.beretta"
+display_name = "Beretta"
+icon = ExtResource("2_beretta_icon")
+max_stack = 1
+tags = PackedStringArray("weapon", "pistol")
