@@ -46,7 +46,7 @@ func sync_customizations_to_peer(peer_id: int) -> void:
 			avatar._rpc_apply_customization.rpc_id(peer_id, avatar.last_customization_json)
 
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "reliable")
 func _spawn_player_on_clients(id: int, position: Vector3, player_name: String, username: String) -> void:
 	# Clients execute this to create a local representation.
 	if multiplayer.is_server():
@@ -66,7 +66,7 @@ func _spawn_player_on_clients(id: int, position: Vector3, player_name: String, u
 	player_avatar.global_position = position
 
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "reliable")
 func _remove_player_on_clients(id: int) -> void:
 	# Clients execute this to remove the player representation.
 	for avatar in %PlayerCharacters.get_children():
