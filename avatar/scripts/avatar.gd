@@ -18,9 +18,18 @@ var customization: AvatarCustomization
 var third_person_camera: ThirdPersonCamera
 var combat: CharacterCombat
 var parry_fx: Node3D
+var health_bar: AvatarHealthBar
+var melee_controller: AvatarMeleeController
+var _hit_flash_tween: Tween
+var _hit_flash_peak: float = 1.0
+var _hit_flash_in_duration: float = 0.04
+var _hit_flash_out_duration: float = 0.18
 @export var parry_fx_path: NodePath = NodePath("Armature/ParryFX")
 @export var heavy_melee_hold_threshold: float = 0.25
 @export var show_combat_debug: bool = true
+
+const ATTACK_TYPE_QUICK: int = 0
+const ATTACK_TYPE_HEAVY: int = 1
 
 var _melee_press_time_ms: int = -1
 var _melee_pressed: bool = false
@@ -67,6 +76,55 @@ var network_combat_state: int:
 			return
 		_apply_network_combat_state(value)
 
+var _network_hp: int = 100
+var network_hp: int:
+	get:
+		return _network_hp
+	set(value):
+		var clamped := maxi(value, 0)
+		if _network_hp == clamped:
+			return
+		_network_hp = clamped
+		if _is_local_controlled():
+			return
+		_apply_network_health_state()
+
+var _network_max_hp: int = 100
+var network_max_hp: int:
+	get:
+		return _network_max_hp
+	set(value):
+		var clamped := maxi(value, 1)
+		if _network_max_hp == clamped:
+			return
+		_network_max_hp = clamped
+		if _is_local_controlled():
+			return
+		_apply_network_health_state()
+
+var _network_display_name: String = ""
+var network_display_name: String:
+	get:
+		return _network_display_name
+	set(value):
+		var resolved := value.strip_edges()
+		if _network_display_name == resolved:
+			return
+		_network_display_name = resolved
+		if _is_local_controlled():
+			return
+		if not resolved.is_empty():
+			char_name = resolved
+		_apply_display_name_to_health_bar()
+
+var display_name: String:
+	get:
+		return char_name
+	set(value):
+		var resolved := value.strip_edges()
+		char_name = resolved if not resolved.is_empty() else "Player_%d" % player_id
+		_apply_display_name_to_health_bar()
+
 var char_name: String = "noName"
 var skin_tone: Color = Color("f2b089")
 var _suppress_customization_broadcast: bool = false
@@ -91,6 +149,8 @@ func _ready() -> void:
 	customization = get_node_or_null("AvatarCustomization") as AvatarCustomization
 	third_person_camera = get_node_or_null("ThirdPersonCamera") as ThirdPersonCamera
 	combat = get_node_or_null("CharacterCombat") as CharacterCombat
+	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
+	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
 	if not parry_fx:
 		parry_fx = find_child("ParryFX", true, false) as Node3D
@@ -108,13 +168,28 @@ func _ready() -> void:
 	else:
 		if not combat.state_changed.is_connected(_on_combat_state_changed):
 			combat.state_changed.connect(_on_combat_state_changed)
+		if not combat.hp_changed.is_connected(_on_hp_changed):
+			combat.hp_changed.connect(_on_hp_changed)
+		if not combat.damaged.is_connected(_on_damaged):
+			combat.damaged.connect(_on_damaged)
 		_on_combat_state_changed(combat.state, combat.state)
+		_on_hp_changed(combat.hp, combat.max_hp)
 	if not parry_fx:
 		printerr("ParryFX node is missing from Avatar scene.")
+	if not health_bar:
+		printerr("HealthBar node is missing from Avatar scene.")
+	if not melee_controller:
+		printerr("MeleeController node is missing from Avatar scene.")
 
 	_setup_debug_overlay()
 	if combat:
 		network_combat_state = combat.state
+		network_hp = combat.hp
+		network_max_hp = combat.max_hp
+	if char_name == "noName":
+		char_name = "Player_%d" % player_id
+	network_display_name = char_name
+	_apply_display_name_to_health_bar()
 	refresh_authority_state()
 
 
@@ -155,6 +230,7 @@ func _process(_delta: float) -> void:
 			network_animation_state = StringName(animation_player.get_desired_tree_state_name())
 		if is_instance_valid(movement_body):
 			network_move_speed = movement_body.get_horizontal_speed()
+		network_display_name = char_name
 	if not is_local:
 		_update_debug_overlay(false)
 		return
@@ -186,10 +262,33 @@ func _process(_delta: float) -> void:
 func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
 	if parry_fx:
 		parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
+	if health_bar:
+		var stunned_state: bool = new_state == CharacterCombat.CombatState.STUNNED
+		health_bar.set_stunned(stunned_state)
+	if melee_controller:
+		if new_state == CharacterCombat.CombatState.QUICK_MELEE and combat:
+			melee_controller.begin_quick_swing_window(combat.quick_melee_duration)
+		elif new_state == CharacterCombat.CombatState.HEAVY_MELEE and combat:
+			melee_controller.begin_heavy_swing_window(combat.heavy_melee_duration)
+		elif new_state == CharacterCombat.CombatState.READY:
+			melee_controller.anim_disable_quick_hitbox()
+			melee_controller.anim_disable_heavy_hitbox()
 	if _applying_network_combat_state:
 		return
 	if _is_local_controlled():
 		network_combat_state = new_state
+
+
+func _on_hp_changed(current_hp: int, max_hp: int) -> void:
+	if health_bar:
+		health_bar.set_health(current_hp, max_hp)
+	if _is_local_controlled():
+		network_hp = current_hp
+		network_max_hp = max_hp
+
+
+func _on_damaged(_amount: int, _current_hp: int) -> void:
+	_play_hit_flash()
 
 
 func _apply_network_combat_state(new_state: int) -> void:
@@ -203,6 +302,34 @@ func _apply_network_combat_state(new_state: int) -> void:
 	combat.state = new_state
 	combat.state_changed.emit(previous_state, new_state)
 	_applying_network_combat_state = false
+
+
+func _apply_network_health_state() -> void:
+	var safe_max := maxi(_network_max_hp, 1)
+	var safe_hp := clampi(_network_hp, 0, safe_max)
+	var previous_hp: int = safe_hp
+
+	if combat:
+		previous_hp = combat.hp
+		var hp_changed := combat.hp != safe_hp or combat.max_hp != safe_max
+		combat.max_hp = safe_max
+		combat.hp = safe_hp
+		if hp_changed:
+			combat.hp_changed.emit(combat.hp, combat.max_hp)
+
+	if health_bar:
+		health_bar.set_health(safe_hp, safe_max)
+	if safe_hp < previous_hp:
+		_play_hit_flash()
+
+
+func _apply_display_name_to_health_bar() -> void:
+	if not health_bar:
+		return
+	var resolved_name := char_name.strip_edges()
+	if resolved_name.is_empty():
+		resolved_name = "Player_%d" % player_id
+	health_bar.set_player_name(resolved_name)
 
 
 func play_anim_once(anim_name: String) -> void:
@@ -255,11 +382,17 @@ func start_punch() -> bool:
 
 
 func start_quick_melee() -> bool:
-	return combat.start_quick_melee() if combat else false
+	if not combat:
+		return false
+	var started: bool = combat.start_quick_melee()
+	return started
 
 
 func start_heavy_melee() -> bool:
-	return combat.start_heavy_melee() if combat else false
+	if not combat:
+		return false
+	var started: bool = combat.start_heavy_melee()
+	return started
 
 
 func start_parry() -> bool:
@@ -272,6 +405,50 @@ func stun(duration: float = -1.0) -> bool:
 
 func apply_damage(amount: int) -> int:
 	return combat.apply_damage(amount) if combat else 0
+
+
+func request_melee_damage(target_avatar: Avatar, amount: int, attack_type: int, swing_token: int) -> void:
+	if not _is_local_controlled():
+		return
+	if target_avatar == null:
+		return
+	if amount <= 0:
+		return
+	if swing_token <= 0:
+		return
+
+	if multiplayer.is_server():
+		_server_apply_melee_damage(target_avatar.player_id, amount, attack_type, swing_token)
+		return
+
+	target_avatar._play_hit_flash()
+	var host_id: int = _resolve_host_peer_id()
+	_rpc_request_melee_damage.rpc_id(host_id, target_avatar.player_id, amount, attack_type, swing_token)
+
+
+func anim_enable_quick_hitbox() -> void:
+	if melee_controller:
+		melee_controller.anim_enable_quick_hitbox()
+
+
+func anim_disable_quick_hitbox() -> void:
+	if melee_controller:
+		melee_controller.anim_disable_quick_hitbox()
+
+
+func anim_enable_heavy_hitbox() -> void:
+	if melee_controller:
+		melee_controller.anim_enable_heavy_hitbox()
+
+
+func anim_disable_heavy_hitbox() -> void:
+	if melee_controller:
+		melee_controller.anim_disable_heavy_hitbox()
+
+
+func anim_clear_melee_hit_cache() -> void:
+	if melee_controller:
+		melee_controller.anim_clear_melee_hit_cache()
 
 
 func heal(amount: int) -> int:
@@ -323,9 +500,15 @@ func _update_debug_overlay(is_local: bool) -> void:
 		desired_tree_state = animation_player.get_desired_tree_state_name()
 		current_anim = String(animation_player.current_animation)
 
+	var local_peer_id: int = -1
+	if multiplayer.has_multiplayer_peer():
+		var peer: MultiplayerPeer = multiplayer.multiplayer_peer
+		if peer != null and peer.get_connection_status() != MultiplayerPeer.CONNECTION_DISCONNECTED:
+			local_peer_id = multiplayer.get_unique_id()
+
 	_debug_label.text = "\n".join([
 		"Combat Debug",
-		"Player Local ID: %d | Avatar Player ID: %d" % [multiplayer.get_unique_id(), player_id],
+		"Player Local ID: %d | Avatar Player ID: %d" % [local_peer_id, player_id],
 		"HP: %s" % hp_text,
 		"Combat State: %s" % combat_state_name,
 		"Parry CD: %.2fs" % parry_cd,
@@ -356,11 +539,183 @@ func _combat_state_name(state_value: int) -> String:
 func _is_local_controlled() -> bool:
 	if not multiplayer.has_multiplayer_peer():
 		return true
-	if player_id == multiplayer.get_unique_id():
+	var peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	if peer == null:
+		return true
+	if peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		return true
+
+	var local_id: int = multiplayer.get_unique_id()
+	if local_id <= 0:
+		return true
+	if player_id == local_id:
 		return true
 	if movement_body and movement_body.is_multiplayer_authority():
 		return true
 	return false
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_melee_damage(target_player_id: int, amount: int, attack_type: int, swing_token: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if amount <= 0:
+		return
+	if swing_token <= 0:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+
+	_server_apply_melee_damage(target_player_id, amount, attack_type, swing_token)
+
+
+func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type: int, swing_token: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if combat == null:
+		return
+	if melee_controller == null:
+		return
+	if swing_token <= 0:
+		return
+
+	var target_avatar: Avatar = _find_avatar_by_player_id(target_player_id)
+	if target_avatar == null:
+		return
+	if target_avatar == self:
+		return
+
+	if attack_type != ATTACK_TYPE_QUICK and attack_type != ATTACK_TYPE_HEAVY:
+		return
+
+	var expected_damage: int = melee_controller.get_damage_for_attack_type(attack_type)
+	if amount != expected_damage:
+		return
+	if not melee_controller.is_swing_token_valid_for_active_window(attack_type, swing_token):
+		return
+
+	var overlap_valid: bool = melee_controller.can_hit_target(target_avatar, attack_type)
+	var range_valid: bool = melee_controller.is_target_within_fallback_range(target_avatar, attack_type)
+	if not overlap_valid and not range_valid:
+		return
+
+	melee_controller.mark_target_hit(target_avatar, attack_type)
+	var applied_damage: int = target_avatar.apply_damage(amount)
+	if applied_damage <= 0:
+		return
+	if target_avatar.combat:
+		var synced_hp: int = target_avatar.combat.hp
+		var synced_max_hp: int = target_avatar.combat.max_hp
+		target_avatar._rpc_sync_health.rpc(synced_hp, synced_max_hp)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_sync_health(new_hp: int, new_max_hp: int) -> void:
+	if multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	var host_id: int = _resolve_host_peer_id()
+	if sender_id != host_id:
+		return
+
+	_apply_synced_health(new_hp, new_max_hp)
+
+
+func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
+	var safe_max: int = maxi(new_max_hp, 1)
+	var safe_hp: int = clampi(new_hp, 0, safe_max)
+
+	_network_max_hp = safe_max
+	_network_hp = safe_hp
+
+	if combat:
+		var hp_changed: bool = combat.hp != safe_hp or combat.max_hp != safe_max
+		combat.max_hp = safe_max
+		combat.hp = safe_hp
+		if hp_changed:
+			combat.hp_changed.emit(combat.hp, combat.max_hp)
+	elif health_bar:
+		health_bar.set_health(safe_hp, safe_max)
+
+
+func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
+	var world_root: Node = get_tree().root
+	var stack: Array[Node] = []
+	stack.push_back(world_root)
+
+	while stack.size() > 0:
+		var node: Node = stack.pop_back()
+		if node is Avatar:
+			var avatar_node: Avatar = node as Avatar
+			if avatar_node.player_id == target_player_id:
+				return avatar_node
+		var children: Array = node.get_children()
+		for child in children:
+			if child is Node:
+				stack.push_back(child as Node)
+
+	return null
+
+
+func _resolve_host_peer_id() -> int:
+	var default_host_id: int = 1
+	var session_manager: Node = get_node_or_null("/root/SessionManager")
+	if session_manager == null:
+		return default_host_id
+	var host_value: Variant = session_manager.get("host_peer_id")
+	if typeof(host_value) == TYPE_INT and int(host_value) > 0:
+		return int(host_value)
+	return default_host_id
+
+
+func _play_hit_flash() -> void:
+	_set_avatar_hit_glow(0.0)
+	if _hit_flash_tween and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_method(_set_avatar_hit_glow, 0.0, _hit_flash_peak, _hit_flash_in_duration)
+	_hit_flash_tween.tween_method(_set_avatar_hit_glow, _hit_flash_peak, 0.0, _hit_flash_out_duration)
+
+
+func _set_avatar_hit_glow(value: float) -> void:
+	var clamped: float = clampf(value, 0.0, 1.0)
+	var materials: Array[ShaderMaterial] = _collect_avatar_shader_materials()
+	for material in materials:
+		material.set_shader_parameter("hit_glow", clamped)
+
+
+func _collect_avatar_shader_materials() -> Array[ShaderMaterial]:
+	var found: Array[ShaderMaterial] = []
+	if customization == null:
+		return found
+
+	var meshes: Array[MeshInstance3D] = customization.mesh_instances
+	for mesh in meshes:
+		if not is_instance_valid(mesh):
+			continue
+
+		if mesh.material_override is ShaderMaterial:
+			var override_shader: ShaderMaterial = mesh.material_override as ShaderMaterial
+			if not found.has(override_shader):
+				found.append(override_shader)
+
+		var mesh_resource: Mesh = mesh.mesh
+		if mesh_resource == null:
+			continue
+		var surface_count: int = mesh_resource.get_surface_count()
+		for surface_index in range(surface_count):
+			var surface_material: Material = mesh.get_surface_override_material(surface_index)
+			if surface_material == null:
+				surface_material = mesh_resource.surface_get_material(surface_index)
+			if surface_material is ShaderMaterial:
+				var shader_material: ShaderMaterial = surface_material as ShaderMaterial
+				if not found.has(shader_material):
+					found.append(shader_material)
+
+	return found
 
 
 static func store_save(character: Avatar) -> void:
