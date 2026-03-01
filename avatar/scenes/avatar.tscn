@@ -27,6 +27,7 @@
 [ext_resource type="AudioStream" uid="uid://bbghnkque8hvl" path="res://assets/vfx_samples/audio/explode.wav" id="27_vfx_explode_audio"]
 [ext_resource type="AudioStream" uid="uid://bctwo7cwwc1dk" path="res://assets/vfx_samples/audio/sound_hit.wav" id="28_vfx_sound_hit_audio"]
 [ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_gun_controller.gd" id="30_gun_controller"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -221,7 +222,12 @@ script = ExtResource("8_66k0b")
 [node name="MeleeController" type="Node" parent="." index="6" unique_id=900169493]
 script = ExtResource("22_f7k2s")
 
-[node name="AvatarVfx" type="Node3D" parent="." index="7" unique_id=1387627368]
+[node name="GunController" type="Node" parent="." index="7"]
+script = ExtResource("30_gun_controller")
+
+[node name="WeaponAimTarget" type="Node3D" parent="." index="8"]
+
+[node name="AvatarVfx" type="Node3D" parent="." index="9" unique_id=1387627368]
 script = ExtResource("25_avatar_vfx")
 light_melee_whoosh_sfx = ExtResource("28_vfx_sound_hit_audio")
 heavy_melee_whoosh_sfx = ExtResource("28_vfx_sound_hit_audio")
@@ -242,16 +248,16 @@ damage_vfx = ExtResource("29_sample_hit_vfx")
 death_vfx = ExtResource("29_sample_hit_vfx")
 revive_vfx = ExtResource("29_sample_hit_vfx")
 
-[node name="HealthBar" type="Node3D" parent="." index="8" unique_id=1808842437]
+[node name="HealthBar" type="Node3D" parent="." index="10" unique_id=1808842437]
 script = ExtResource("21_v6bhq")
 height_offset = 3.0
 panel_size = Vector2i(320, 120)
 
-[node name="Inventory" type="Node" parent="." index="9" unique_id=871050608]
+[node name="Inventory" type="Node" parent="." index="11" unique_id=871050608]
 script = ExtResource("23_inventory")
 
-[node name="InventoryDebugUI" type="CanvasLayer" parent="." index="10" unique_id=792165495]
+[node name="InventoryDebugUI" type="CanvasLayer" parent="." index="12" unique_id=792165495]
 script = ExtResource("24_inventory_ui")
 
-[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="11" unique_id=2020533423]
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="13" unique_id=2020533423]
 script = ExtResource("20_w4c3n")

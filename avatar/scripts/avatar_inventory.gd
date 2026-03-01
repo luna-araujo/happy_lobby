@@ -76,6 +76,12 @@ func count_item(item_id: String) -> int:
 	return total_quantity
 
 
+func has_item(item_id: String, quantity: int = 1) -> bool:
+	if quantity <= 0:
+		return false
+	return count_item(item_id) >= quantity
+
+
 func can_add_item(item_id: String, quantity: int) -> bool:
 	var normalized_item_id: String = item_id.strip_edges()
 	if normalized_item_id.is_empty():
@@ -93,6 +99,44 @@ func can_add_item(item_id: String, quantity: int) -> bool:
 		if remaining <= 0:
 			return true
 	return false
+
+
+func try_grant_item(item_id: String, quantity: int = 1, metadata: Dictionary = {}) -> bool:
+	if quantity <= 0:
+		return false
+	if not can_add_item(item_id, quantity):
+		return false
+	var remaining: int = add_item(item_id, quantity, metadata)
+	return remaining == 0
+
+
+func try_buy_item(item_id: String, price: int, quantity: int = 1, metadata: Dictionary = {}) -> bool:
+	if not _can_mutate():
+		return false
+	if price < 0:
+		return false
+	if quantity <= 0:
+		return false
+	if not can_add_item(item_id, quantity):
+		return false
+	if money < price:
+		return false
+	var previous_money: int = money
+	var spent: bool = _set_money_internal(previous_money - price)
+	if not spent and price > 0:
+		return false
+	var remaining: int = add_item(item_id, quantity, metadata)
+	if remaining == 0:
+		return true
+	_set_money_internal(previous_money)
+	return false
+
+
+func try_drop_item(item_id: String, quantity: int = 1) -> bool:
+	if quantity <= 0:
+		return false
+	var removed_amount: int = remove_item(item_id, quantity)
+	return removed_amount == quantity
 
 
 func set_money(value: int) -> bool:

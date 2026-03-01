@@ -33,6 +33,7 @@ var combat: CharacterCombat
 var parry_fx: Node3D
 var health_bar: AvatarHealthBar
 var melee_controller: AvatarMeleeController
+var gun_controller: AvatarGunController
 var inventory: AvatarInventory
 var inventory_debug_ui: AvatarInventoryDebugUi
 var _hit_flash_tween: Tween
@@ -161,6 +162,33 @@ var network_inventory_money: int:
 			return
 		_apply_network_inventory_state()
 
+var _network_gun_equipped_item_id: String = ""
+var network_gun_equipped_item_id: String:
+	get:
+		return _network_gun_equipped_item_id
+	set(value):
+		var resolved: String = value.strip_edges()
+		if _network_gun_equipped_item_id == resolved:
+			return
+		_network_gun_equipped_item_id = resolved
+		if _is_local_controlled():
+			return
+		if gun_controller != null:
+			gun_controller.apply_network_equipped(StringName(resolved))
+
+var _network_gun_is_aiming: bool = false
+var network_gun_is_aiming: bool:
+	get:
+		return _network_gun_is_aiming
+	set(value):
+		if _network_gun_is_aiming == value:
+			return
+		_network_gun_is_aiming = value
+		if _is_local_controlled():
+			return
+		if gun_controller != null:
+			gun_controller.apply_network_aiming(value)
+
 var display_name: String:
 	get:
 		return char_name
@@ -196,6 +224,7 @@ func _ready() -> void:
 	combat = get_node_or_null("CharacterCombat") as CharacterCombat
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
 	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
+	gun_controller = get_node_or_null("GunController") as AvatarGunController
 	inventory = get_node_or_null("Inventory") as AvatarInventory
 	inventory_debug_ui = get_node_or_null("InventoryDebugUI") as AvatarInventoryDebugUi
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
@@ -227,6 +256,8 @@ func _ready() -> void:
 		printerr("HealthBar node is missing from Avatar scene.")
 	if not melee_controller:
 		printerr("MeleeController node is missing from Avatar scene.")
+	if not gun_controller:
+		printerr("GunController node is missing from Avatar scene.")
 	if not inventory:
 		printerr("Inventory node is missing from Avatar scene.")
 	else:
@@ -249,6 +280,9 @@ func _ready() -> void:
 	if inventory:
 		network_inventory_slots_json = inventory.serialize_slots_json()
 		network_inventory_money = inventory.get_money()
+	if gun_controller != null:
+		network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
+		network_gun_is_aiming = gun_controller.is_aiming()
 	_apply_network_inventory_state()
 	refresh_authority_state()
 
@@ -302,6 +336,12 @@ func _process(_delta: float) -> void:
 		if is_instance_valid(movement_body):
 			network_move_speed = movement_body.get_horizontal_speed()
 			speed_for_vfx = network_move_speed
+		if gun_controller != null:
+			gun_controller.set_aiming(Input.is_action_pressed("aim"))
+			if Input.is_action_pressed("shoot"):
+				gun_controller.request_fire_once()
+			network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
+			network_gun_is_aiming = gun_controller.is_aiming()
 		network_display_name = char_name
 	else:
 		speed_for_vfx = _network_move_speed
@@ -521,6 +561,30 @@ func start_punch() -> bool:
 	return start_quick_melee()
 
 
+func equip_beretta() -> bool:
+	if gun_controller == null:
+		return false
+	return gun_controller.equip_item(AvatarGunController.ITEM_ID_BERETTA)
+
+
+func unequip_weapon() -> void:
+	if gun_controller == null:
+		return
+	gun_controller.unequip_current()
+
+
+func try_buy_beretta(price: int) -> bool:
+	if gun_controller == null:
+		return false
+	return gun_controller.try_buy_beretta(price)
+
+
+func try_drop_beretta() -> bool:
+	if gun_controller == null:
+		return false
+	return gun_controller.try_drop_beretta()
+
+
 func start_quick_melee() -> bool:
 	if not combat:
 		return false
@@ -587,6 +651,8 @@ func request_melee_damage_to_damageable(target_damageable_id: int, amount: int, 
 
 	var host_id: int = _resolve_host_peer_id()
 	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
 		return
 	_rpc_request_melee_damage.rpc_id(host_id, target_damageable_id, amount, attack_type, swing_token)
 
@@ -707,7 +773,7 @@ func _is_local_controlled() -> bool:
 	var peer: MultiplayerPeer = multiplayer.multiplayer_peer
 	if peer == null:
 		return true
-	if peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+	if peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return true
 
 	var local_id: int = multiplayer.get_unique_id()

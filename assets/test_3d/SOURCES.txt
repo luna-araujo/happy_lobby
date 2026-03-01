@@ -3,3 +3,8 @@ Downloaded from Khronos glTF Sample Models:
 - Duck: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/Duck
 - BoomBox: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/BoomBox
 Check each model folder for license details.
+
+Additional model:
+- Lowpoly Gun (Beretta M9): https://www.get3dmodels.com/combat-assets/stylized-handgun/
+- Direct download used: https://www.get3dmodels.com/download/beretta_m9_low-poly_by_get3dmodels.glb
+Check source page for license/usage terms.

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cchi0oklimlb6"]
+
+[ext_resource type="PackedScene" uid="uid://bd5dg73sp18x2" path="res://assets/test_3d/lowpoly_gun_beretta_m9.glb" id="1_wsfd2"]
+
+[node name="Beretta" unique_id=613662109 instance=ExtResource("1_wsfd2")]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0)
