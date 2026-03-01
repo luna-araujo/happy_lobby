@@ -20,6 +20,8 @@
 [ext_resource type="Script" uid="uid://c2pxmdnqi5xhr" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
 [ext_resource type="Script" uid="uid://befkpl4atq0v8" path="res://avatar/scripts/avatar_healthbar.gd" id="21_v6bhq"]
 [ext_resource type="Script" uid="uid://bo3s6y1y07udf" path="res://avatar/scripts/avatar_melee_controller.gd" id="22_f7k2s"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_inventory.gd" id="23_inventory"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_inventory_debug_ui.gd" id="24_inventory_ui"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -113,6 +115,7 @@ _data = {
 [node name="Avatar" unique_id=599124838 instance=ExtResource("1_bnsy6")]
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
 script = ExtResource("2_ko7hc")
+show_combat_debug = false
 
 [node name="Armature" parent="." index="0" unique_id=1940947775]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
@@ -216,6 +219,14 @@ script = ExtResource("22_f7k2s")
 [node name="HealthBar" type="Node3D" parent="." index="7" unique_id=1808842437]
 script = ExtResource("21_v6bhq")
 height_offset = 3.0
+panel_size = Vector2i(320, 120)
 
-[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="8" unique_id=2020533423]
+[node name="Inventory" type="Node" parent="." index="8"]
+script = ExtResource("23_inventory")
+
+[node name="InventoryDebugUI" type="CanvasLayer" parent="." index="9"]
+script = ExtResource("24_inventory_ui")
+visible = false
+
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="10" unique_id=2020533423]
 script = ExtResource("20_w4c3n")

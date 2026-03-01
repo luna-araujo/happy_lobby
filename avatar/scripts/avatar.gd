@@ -20,6 +20,8 @@ var combat: CharacterCombat
 var parry_fx: Node3D
 var health_bar: AvatarHealthBar
 var melee_controller: AvatarMeleeController
+var inventory: AvatarInventory
+var inventory_debug_ui: AvatarInventoryDebugUi
 var _hit_flash_tween: Tween
 var _hit_flash_peak: float = 1.0
 var _hit_flash_in_duration: float = 0.04
@@ -38,6 +40,7 @@ var _heavy_melee_triggered: bool = false
 var _debug_layer: CanvasLayer
 var _debug_label: Label
 var _applying_network_combat_state: bool = false
+var _applying_network_inventory_state: bool = false
 
 var _network_animation_state: StringName = &"Locomotion"
 var network_animation_state: StringName:
@@ -118,6 +121,31 @@ var network_display_name: String:
 			char_name = resolved
 		_apply_display_name_to_health_bar()
 
+var _network_inventory_slots_json: String = "[]"
+var network_inventory_slots_json: String:
+	get:
+		return _network_inventory_slots_json
+	set(value):
+		if _network_inventory_slots_json == value:
+			return
+		_network_inventory_slots_json = value
+		if _is_local_controlled():
+			return
+		_apply_network_inventory_state()
+
+var _network_inventory_money: int = 0
+var network_inventory_money: int:
+	get:
+		return _network_inventory_money
+	set(value):
+		var clamped: int = maxi(value, 0)
+		if _network_inventory_money == clamped:
+			return
+		_network_inventory_money = clamped
+		if _is_local_controlled():
+			return
+		_apply_network_inventory_state()
+
 var display_name: String:
 	get:
 		return char_name
@@ -145,6 +173,7 @@ var polygons: Array[MeshInstance3D]:
 
 
 func _ready() -> void:
+	add_to_group("Damageable")
 	animation_player = get_node_or_null("AnimationPlayer") as AvatarAnimations
 	movement_body = get_node_or_null("Armature") as CharacterBody3D
 	customization = get_node_or_null("AvatarCustomization") as AvatarCustomization
@@ -152,6 +181,8 @@ func _ready() -> void:
 	combat = get_node_or_null("CharacterCombat") as CharacterCombat
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
 	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
+	inventory = get_node_or_null("Inventory") as AvatarInventory
+	inventory_debug_ui = get_node_or_null("InventoryDebugUI") as AvatarInventoryDebugUi
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
 	if not parry_fx:
 		parry_fx = find_child("ParryFX", true, false) as Node3D
@@ -181,6 +212,15 @@ func _ready() -> void:
 		printerr("HealthBar node is missing from Avatar scene.")
 	if not melee_controller:
 		printerr("MeleeController node is missing from Avatar scene.")
+	if not inventory:
+		printerr("Inventory node is missing from Avatar scene.")
+	else:
+		if not inventory.inventory_changed.is_connected(_on_inventory_changed):
+			inventory.inventory_changed.connect(_on_inventory_changed)
+		if not inventory.money_changed.is_connected(_on_inventory_money_changed):
+			inventory.money_changed.connect(_on_inventory_money_changed)
+	if not inventory_debug_ui:
+		printerr("InventoryDebugUI node is missing from Avatar scene.")
 
 	_setup_debug_overlay()
 	if combat:
@@ -191,7 +231,19 @@ func _ready() -> void:
 		char_name = "Player_%d" % player_id
 	network_display_name = char_name
 	_apply_display_name_to_health_bar()
+	if inventory:
+		network_inventory_slots_json = inventory.serialize_slots_json()
+		network_inventory_money = inventory.get_money()
+	_apply_network_inventory_state()
 	refresh_authority_state()
+
+
+func _exit_tree() -> void:
+	var should_release_mouse: bool = _is_local_controlled()
+	if not should_release_mouse:
+		return
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
 func _apply_player_authority() -> void:
@@ -222,6 +274,8 @@ func refresh_authority_state() -> void:
 
 	if third_person_camera:
 		third_person_camera.set_active(local_player)
+	if inventory_debug_ui:
+		inventory_debug_ui.set_local_player_active(local_player)
 
 
 func _process(_delta: float) -> void:
@@ -337,6 +391,31 @@ func _apply_display_name_to_health_bar() -> void:
 	health_bar.set_player_name(resolved_name)
 
 
+func _on_inventory_changed() -> void:
+	if inventory == null:
+		return
+	if _applying_network_inventory_state:
+		return
+	if not _is_local_controlled():
+		return
+	network_inventory_slots_json = inventory.serialize_slots_json()
+	network_inventory_money = inventory.get_money()
+
+
+func _on_inventory_money_changed(_new_money: int) -> void:
+	_on_inventory_changed()
+
+
+func _apply_network_inventory_state() -> void:
+	if inventory == null:
+		return
+	if _is_local_controlled():
+		return
+	_applying_network_inventory_state = true
+	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
+	_applying_network_inventory_state = false
+
+
 func play_anim_once(anim_name: String) -> void:
 	if not is_instance_valid(animation_player):
 		return
@@ -412,10 +491,26 @@ func apply_damage(amount: int) -> int:
 	return combat.apply_damage(amount) if combat else 0
 
 
+func can_receive_damage() -> bool:
+	if combat == null:
+		return false
+	return combat.state != CharacterCombat.CombatState.DEAD
+
+
+func get_damageable_id() -> int:
+	return player_id
+
+
 func request_melee_damage(target_avatar: Avatar, amount: int, attack_type: int, swing_token: int) -> void:
+	if target_avatar == null:
+		return
+	request_melee_damage_to_damageable(target_avatar.player_id, amount, attack_type, swing_token)
+
+
+func request_melee_damage_to_damageable(target_damageable_id: int, amount: int, attack_type: int, swing_token: int) -> void:
 	if not _is_local_controlled():
 		return
-	if target_avatar == null:
+	if target_damageable_id <= 0:
 		return
 	if amount <= 0:
 		return
@@ -425,7 +520,7 @@ func request_melee_damage(target_avatar: Avatar, amount: int, attack_type: int, 
 		return
 
 	if multiplayer.is_server():
-		_server_apply_melee_damage(target_avatar.player_id, amount, attack_type, swing_token)
+		_server_apply_melee_damage(target_damageable_id, amount, attack_type, swing_token)
 		return
 
 	var multiplayer_peer: MultiplayerPeer = multiplayer.multiplayer_peer
@@ -434,11 +529,10 @@ func request_melee_damage(target_avatar: Avatar, amount: int, attack_type: int, 
 	if multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
 
-	target_avatar._play_hit_flash()
 	var host_id: int = _resolve_host_peer_id()
 	if host_id <= 0:
 		return
-	_rpc_request_melee_damage.rpc_id(host_id, target_avatar.player_id, amount, attack_type, swing_token)
+	_rpc_request_melee_damage.rpc_id(host_id, target_damageable_id, amount, attack_type, swing_token)
 
 
 func anim_enable_quick_hitbox() -> void:
@@ -571,7 +665,7 @@ func _is_local_controlled() -> bool:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_request_melee_damage(target_player_id: int, amount: int, attack_type: int, swing_token: int) -> void:
+func _rpc_request_melee_damage(target_damageable_id: int, amount: int, attack_type: int, swing_token: int) -> void:
 	if not multiplayer.is_server():
 		return
 	if amount <= 0:
@@ -583,10 +677,10 @@ func _rpc_request_melee_damage(target_player_id: int, amount: int, attack_type: 
 	if sender_id != player_id:
 		return
 
-	_server_apply_melee_damage(target_player_id, amount, attack_type, swing_token)
+	_server_apply_melee_damage(target_damageable_id, amount, attack_type, swing_token)
 
 
-func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type: int, swing_token: int) -> void:
+func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_type: int, swing_token: int) -> void:
 	if not multiplayer.is_server():
 		return
 	if combat == null:
@@ -596,10 +690,10 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 	if swing_token <= 0:
 		return
 
-	var target_avatar: Avatar = _find_avatar_by_player_id(target_player_id)
-	if target_avatar == null:
+	var target_damageable: Node = _find_damageable_by_id(target_damageable_id)
+	if target_damageable == null:
 		return
-	if target_avatar == self:
+	if target_damageable == self:
 		return
 
 	if attack_type != ATTACK_TYPE_QUICK and attack_type != ATTACK_TYPE_HEAVY:
@@ -611,26 +705,38 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 	if not melee_controller.is_swing_token_valid_for_active_window(attack_type, swing_token):
 		return
 
-	var overlap_valid: bool = melee_controller.can_hit_target(target_avatar, attack_type)
-	var range_valid: bool = melee_controller.is_target_within_fallback_range(target_avatar, attack_type)
+	var overlap_valid: bool = melee_controller.can_hit_target(target_damageable, attack_type)
+	var range_valid: bool = melee_controller.is_target_within_fallback_range(target_damageable, attack_type)
 	if not overlap_valid and not range_valid:
 		return
 
-	if target_avatar.combat and target_avatar.combat.state == CharacterCombat.CombatState.PARRYING:
-		var should_stun_attacker: bool = combat.state != CharacterCombat.CombatState.STUNNED
-		if should_stun_attacker:
-			var stun_duration: float = maxf(parry_counter_stun_duration, 0.01)
-			stun(stun_duration)
-		return
+	if target_damageable.has_method("can_receive_damage"):
+		var can_receive_result: Variant = target_damageable.call("can_receive_damage")
+		if typeof(can_receive_result) == TYPE_BOOL and not bool(can_receive_result):
+			return
 
-	melee_controller.mark_target_hit(target_avatar, attack_type)
-	var applied_damage: int = target_avatar.apply_damage(amount)
+	if target_damageable is Avatar:
+		var target_avatar: Avatar = target_damageable as Avatar
+		if target_avatar.combat and target_avatar.combat.state == CharacterCombat.CombatState.PARRYING:
+			var should_stun_attacker: bool = combat.state != CharacterCombat.CombatState.STUNNED
+			if should_stun_attacker:
+				var stun_duration: float = maxf(parry_counter_stun_duration, 0.01)
+				stun(stun_duration)
+			return
+
+	melee_controller.mark_target_hit(target_damageable, attack_type)
+	var applied_result: Variant = target_damageable.call("apply_damage", amount)
+	var applied_damage: int = 0
+	if typeof(applied_result) == TYPE_INT:
+		applied_damage = int(applied_result)
 	if applied_damage <= 0:
 		return
-	if target_avatar.combat:
-		var synced_hp: int = target_avatar.combat.hp
-		var synced_max_hp: int = target_avatar.combat.max_hp
-		target_avatar._send_health_sync_to_owner(synced_hp, synced_max_hp)
+	if target_damageable is Avatar:
+		var damaged_avatar: Avatar = target_damageable as Avatar
+		if damaged_avatar.combat:
+			var synced_hp: int = damaged_avatar.combat.hp
+			var synced_max_hp: int = damaged_avatar.combat.max_hp
+			damaged_avatar._send_health_sync_to_owner(synced_hp, synced_max_hp)
 
 
 func _send_combat_state_sync_to_owner(new_state: int) -> void:
@@ -701,17 +807,17 @@ func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
 		health_bar.set_health(safe_hp, safe_max)
 
 
-func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
+func _find_damageable_by_id(target_damageable_id: int) -> Node:
 	var world_root: Node = get_tree().root
 	var stack: Array[Node] = []
 	stack.push_back(world_root)
 
 	while stack.size() > 0:
 		var node: Node = stack.pop_back()
-		if node is Avatar:
-			var avatar_node: Avatar = node as Avatar
-			if avatar_node.player_id == target_player_id:
-				return avatar_node
+		if node.has_method("get_damageable_id") and node.has_method("apply_damage"):
+			var resolved_id_value: Variant = node.call("get_damageable_id")
+			if typeof(resolved_id_value) == TYPE_INT and int(resolved_id_value) == target_damageable_id:
+				return node
 		var children: Array = node.get_children()
 		for child in children:
 			if child is Node:
