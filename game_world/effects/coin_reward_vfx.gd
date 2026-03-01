@@ -72,6 +72,8 @@ func _on_flight_finished() -> void:
 func _resolve_target_position() -> Vector3:
 	var target_avatar: Avatar = _find_avatar_by_player_id(target_player_id)
 	if target_avatar != null:
+		if target_avatar.movement_body != null:
+			return target_avatar.movement_body.global_position + Vector3.UP * 1.4
 		return target_avatar.global_position + Vector3.UP * 1.4
 	return _flight_start_position + Vector3.UP * 1.0
 
