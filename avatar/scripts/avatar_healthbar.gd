@@ -13,10 +13,11 @@ extends Node3D
 var _anchor: Node3D
 var _viewport: SubViewport
 var _name_label: Label
-var _status_label: Label
+var _status_list: VBoxContainer
 var _hp_label: Label
 var _hp_bar: ProgressBar
 var _mesh_instance: MeshInstance3D
+var _status_labels: Dictionary = {}
 var _is_stunned: bool = false
 var _current_hp: int = 100
 var _max_hp: int = 100
@@ -64,8 +65,10 @@ func set_health(current_hp: int, max_hp: int) -> void:
 
 func set_stunned(is_stunned: bool) -> void:
 	_is_stunned = is_stunned
-	if is_instance_valid(_status_label):
-		_status_label.visible = _is_stunned
+	if _is_stunned:
+		_set_status_visible("STUNNED", true, stunned_status_color)
+	else:
+		_set_status_visible("STUNNED", false, stunned_status_color)
 	_refresh_hp_visual_style()
 
 
@@ -96,6 +99,16 @@ func _build_ui() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_viewport.add_child(root)
 
+	_status_list = VBoxContainer.new()
+	_status_list.name = "StatusList"
+	_status_list.z_index = 10
+	_status_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_status_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_status_list.position = Vector2(0.0, -42.0)
+	_status_list.custom_minimum_size = Vector2(float(panel_size.x), 0.0)
+	_status_list.add_theme_constant_override("separation", 2)
+	root.add_child(_status_list)
+
 	var bg: ColorRect = ColorRect.new()
 	bg.name = "Background"
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -119,14 +132,6 @@ func _build_ui() -> void:
 	_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	vbox.add_child(_name_label)
 
-	_status_label = Label.new()
-	_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_status_label.text = "STUNNED"
-	_status_label.modulate = stunned_status_color
-	_status_label.visible = false
-	vbox.add_child(_status_label)
-
 	_hp_bar = ProgressBar.new()
 	_hp_bar.min_value = 0
 	_hp_bar.max_value = 100
@@ -140,6 +145,31 @@ func _build_ui() -> void:
 	_hp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	vbox.add_child(_hp_label)
 	_hp_label.text = "100/100"
+
+
+func _set_status_visible(status_key: String, is_visible: bool, status_color: Color) -> void:
+	if not is_instance_valid(_status_list):
+		return
+
+	var existing: Variant = _status_labels.get(status_key, null)
+	var status_label: Label = existing as Label
+	if is_visible:
+		if not is_instance_valid(status_label):
+			status_label = Label.new()
+			status_label.text = status_key
+			status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			status_label.modulate = status_color
+			_status_list.add_child(status_label)
+			_status_labels[status_key] = status_label
+		else:
+			status_label.visible = true
+			status_label.modulate = status_color
+		return
+
+	if is_instance_valid(status_label):
+		status_label.queue_free()
+	_status_labels.erase(status_key)
 
 
 func _build_mesh() -> void:

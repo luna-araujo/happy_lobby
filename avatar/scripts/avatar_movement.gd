@@ -38,7 +38,10 @@ func _ready() -> void:
 func _is_movement_locked_by_combat() -> bool:
 	if combat == null:
 		return false
-	return combat.state == CharacterCombat.CombatState.PARRYING or combat.is_melee_state()
+	return combat.state == CharacterCombat.CombatState.PARRYING \
+		or combat.state == CharacterCombat.CombatState.STUNNED \
+		or combat.state == CharacterCombat.CombatState.DEAD \
+		or combat.is_melee_state()
 
 
 func _is_heavy_melee_active() -> bool:

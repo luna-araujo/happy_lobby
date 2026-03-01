@@ -261,6 +261,8 @@ func _process(_delta: float) -> void:
 
 
 func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
+	if multiplayer.is_server() and not _is_local_controlled():
+		_rpc_sync_combat_state.rpc(new_state)
 	if parry_fx:
 		parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
 	if health_bar:
@@ -616,9 +618,7 @@ func _server_apply_melee_damage(target_player_id: int, amount: int, attack_type:
 		var should_stun_attacker: bool = combat.state != CharacterCombat.CombatState.STUNNED
 		if should_stun_attacker:
 			var stun_duration: float = maxf(parry_counter_stun_duration, 0.01)
-			var stunned: bool = stun(stun_duration)
-			if stunned and combat:
-				_rpc_sync_combat_state.rpc(combat.state)
+			stun(stun_duration)
 		return
 
 	melee_controller.mark_target_hit(target_avatar, attack_type)
