@@ -441,6 +441,8 @@ func _on_inventory_changed() -> void:
 		return
 	network_inventory_slots_json = inventory.serialize_slots_json()
 	network_inventory_money = inventory.get_money()
+	if multiplayer.is_server():
+		_send_inventory_sync_to_owner(network_inventory_slots_json, network_inventory_money)
 
 
 func _on_inventory_money_changed(_new_money: int) -> void:
@@ -457,6 +459,17 @@ func _apply_network_inventory_state() -> void:
 	_applying_network_inventory_state = true
 	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
 	_applying_network_inventory_state = false
+
+
+func _send_inventory_sync_to_owner(slots_json: String, money_value: int) -> void:
+	var local_peer_id: int = _get_local_peer_id_if_connected()
+	if player_id <= 0:
+		return
+	if player_id == local_peer_id:
+		return
+	if not _is_connected_peer(player_id):
+		return
+	_rpc_sync_inventory.rpc_id(player_id, slots_json, money_value)
 
 
 func play_anim_once(anim_name: String) -> void:
@@ -841,6 +854,17 @@ func _rpc_sync_health(new_hp: int, new_max_hp: int) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
+func _rpc_sync_inventory(slots_json: String, money_value: int) -> void:
+	if multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	var host_id: int = _resolve_host_peer_id()
+	if sender_id != host_id:
+		return
+	_apply_synced_inventory(slots_json, money_value)
+
+
+@rpc("any_peer", "call_remote", "reliable")
 func _rpc_broadcast_melee_hit(attack_type: int, target_damageable_id: int, damage: int) -> void:
 	if multiplayer.is_server():
 		return
@@ -869,6 +893,16 @@ func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
 			damaged.emit(previous_hp - safe_hp, safe_hp)
 	elif health_bar:
 		health_bar.set_health(safe_hp, safe_max)
+
+
+func _apply_synced_inventory(slots_json: String, money_value: int) -> void:
+	_network_inventory_slots_json = slots_json
+	_network_inventory_money = maxi(money_value, 0)
+	if inventory == null:
+		return
+	_applying_network_inventory_state = true
+	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
+	_applying_network_inventory_state = false
 
 
 func _update_run_vfx_state(speed_value: float) -> void:
