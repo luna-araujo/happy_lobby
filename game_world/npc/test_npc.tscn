@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game_world/npc/test_npc.gd" id="1_npc"]
+[ext_resource type="PackedScene" path="res://assets/test_3d/duck.glb" id="2_duck"]
+[ext_resource type="Script" path="res://avatar/scripts/character_combat.gd" id="3_combat"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_healthbar.gd" id="4_healthbar"]
+[ext_resource type="Script" path="res://game_world/npc/test_npc_state_sync.gd" id="5_sync"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_npc"]
+radius = 0.5
+height = 1.0
+
+[node name="TestNpc" type="CharacterBody3D"]
+script = ExtResource("1_npc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_npc")
+
+[node name="DuckModel" parent="." instance=ExtResource("2_duck")]
+transform = Transform3D(0.48, 0, 0, 0, 0.48, 0, 0, 0, 0.48, 0, 0.05, 0)
+
+[node name="CharacterCombat" type="Node" parent="."]
+script = ExtResource("3_combat")
+max_hp = 90
+hp = 90
+debug_auto_revive_enabled = false
+
+[node name="HealthBar" type="Node3D" parent="."]
+script = ExtResource("4_healthbar")
+anchor_path = NodePath("..")
+height_offset = 2.2
+panel_size = Vector2i(260, 84)
+world_width = 2.4
+status_panel_height = 20
+
+[node name="StateSync" type="MultiplayerSynchronizer" parent="."]
+script = ExtResource("5_sync")

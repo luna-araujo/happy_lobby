@@ -396,7 +396,7 @@ func _on_inventory_changed() -> void:
 		return
 	if _applying_network_inventory_state:
 		return
-	if not _is_local_controlled():
+	if not multiplayer.is_server() and not _is_local_controlled():
 		return
 	network_inventory_slots_json = inventory.serialize_slots_json()
 	network_inventory_money = inventory.get_money()
@@ -408,6 +408,8 @@ func _on_inventory_money_changed(_new_money: int) -> void:
 
 func _apply_network_inventory_state() -> void:
 	if inventory == null:
+		return
+	if multiplayer.is_server():
 		return
 	if _is_local_controlled():
 		return
@@ -725,7 +727,11 @@ func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_t
 			return
 
 	melee_controller.mark_target_hit(target_damageable, attack_type)
-	var applied_result: Variant = target_damageable.call("apply_damage", amount)
+	var applied_result: Variant = 0
+	if target_damageable.has_method("apply_damage_from_attacker"):
+		applied_result = target_damageable.call("apply_damage_from_attacker", amount, player_id)
+	else:
+		applied_result = target_damageable.call("apply_damage", amount)
 	var applied_damage: int = 0
 	if typeof(applied_result) == TYPE_INT:
 		applied_damage = int(applied_result)
