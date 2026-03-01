@@ -22,8 +22,8 @@ transform = Transform3D(0.48, 0, 0, 0, 0.48, 0, 0, 0, 0.48, 0, 0.05, 0)
 
 [node name="CharacterCombat" type="Node" parent="."]
 script = ExtResource("3_combat")
-max_hp = 90
-hp = 90
+max_hp = 30
+hp = 30
 debug_auto_revive_enabled = false
 
 [node name="HealthBar" type="Node3D" parent="."]
