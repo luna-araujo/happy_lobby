@@ -2,6 +2,7 @@ class_name TestNpc
 extends CharacterBody3D
 
 const DUCK_HIT_SHADER: Shader = preload("res://avatar/shaders/avatar.gdshader")
+const COIN_REWARD_VFX_SCENE: PackedScene = preload("res://game_world/effects/coin_reward_vfx.tscn")
 
 @export var npc_id: int = 0
 @export var display_name: String = ""
@@ -280,6 +281,7 @@ func _grant_kill_reward(attacker_player_id: int) -> void:
 	if attacker_avatar.inventory == null:
 		return
 	attacker_avatar.inventory.add_money(kill_reward_money)
+	_rpc_spawn_reward_coin_vfx.rpc(global_position + Vector3.UP * 0.35, attacker_player_id, kill_reward_money)
 
 
 func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
@@ -297,3 +299,15 @@ func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
 			if child is Node:
 				stack.push_back(child)
 	return null
+
+
+@rpc("authority", "call_local", "reliable")
+func _rpc_spawn_reward_coin_vfx(spawn_position: Vector3, target_player_id: int, reward_value: int) -> void:
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return
+	var vfx_instance: CoinRewardVfx = COIN_REWARD_VFX_SCENE.instantiate() as CoinRewardVfx
+	if vfx_instance == null:
+		return
+	current_scene.add_child(vfx_instance)
+	vfx_instance.start_flight(spawn_position, target_player_id, reward_value)

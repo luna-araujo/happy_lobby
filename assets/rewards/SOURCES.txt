@@ -1,0 +1,5 @@
+coin.glb
+Source: Khronos glTF Sample Assets
+Model: AnisotropyDiscTest (used as temporary coin visual)
+URL: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/AnisotropyDiscTest
+License: See upstream repository for license details.
