@@ -2,6 +2,19 @@ class_name Avatar
 extends Node3D
 
 signal customized
+signal light_melee_started
+signal heavy_melee_started
+signal light_melee_hit(target_damageable_id: int, damage: int)
+signal heavy_melee_hit(target_damageable_id: int, damage: int)
+signal run_started(speed: float)
+signal run_stopped
+signal parry_started
+signal parry_ended
+signal stun_started
+signal stun_ended
+signal damaged(amount: int, current_hp: int)
+signal died
+signal revived
 
 var _player_id: int = 1
 var player_id: int:
@@ -41,6 +54,8 @@ var _debug_layer: CanvasLayer
 var _debug_label: Label
 var _applying_network_combat_state: bool = false
 var _applying_network_inventory_state: bool = false
+var _vfx_is_running: bool = false
+@export var run_vfx_speed_threshold: float = 0.15
 
 var _network_animation_state: StringName = &"Locomotion"
 var network_animation_state: StringName:
@@ -280,12 +295,19 @@ func refresh_authority_state() -> void:
 
 func _process(_delta: float) -> void:
 	var is_local := _is_local_controlled()
+	var speed_for_vfx: float = 0.0
 	if is_local:
 		if is_instance_valid(animation_player):
 			network_animation_state = StringName(animation_player.get_desired_tree_state_name())
 		if is_instance_valid(movement_body):
 			network_move_speed = movement_body.get_horizontal_speed()
+			speed_for_vfx = network_move_speed
 		network_display_name = char_name
+	else:
+		speed_for_vfx = _network_move_speed
+
+	_update_run_vfx_state(speed_for_vfx)
+
 	if not is_local:
 		_update_debug_overlay(false)
 		return
@@ -318,6 +340,23 @@ func _on_combat_state_changed(previous_state: int, new_state: int) -> void:
 	var is_actual_transition: bool = previous_state != new_state
 	if multiplayer.is_server() and not _is_local_controlled() and is_actual_transition:
 		_send_combat_state_sync_to_owner(new_state)
+	if is_actual_transition:
+		if new_state == CharacterCombat.CombatState.QUICK_MELEE:
+			light_melee_started.emit()
+		elif new_state == CharacterCombat.CombatState.HEAVY_MELEE:
+			heavy_melee_started.emit()
+		if new_state == CharacterCombat.CombatState.PARRYING:
+			parry_started.emit()
+		if previous_state == CharacterCombat.CombatState.PARRYING and new_state != CharacterCombat.CombatState.PARRYING:
+			parry_ended.emit()
+		if new_state == CharacterCombat.CombatState.STUNNED:
+			stun_started.emit()
+		if previous_state == CharacterCombat.CombatState.STUNNED and new_state != CharacterCombat.CombatState.STUNNED:
+			stun_ended.emit()
+		if new_state == CharacterCombat.CombatState.DEAD:
+			died.emit()
+		if previous_state == CharacterCombat.CombatState.DEAD and new_state == CharacterCombat.CombatState.READY:
+			revived.emit()
 	if parry_fx:
 		parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
 	if health_bar:
@@ -347,6 +386,7 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 
 
 func _on_damaged(_amount: int, _current_hp: int) -> void:
+	damaged.emit(_amount, _current_hp)
 	_play_hit_flash()
 
 
@@ -379,6 +419,7 @@ func _apply_network_health_state() -> void:
 	if health_bar:
 		health_bar.set_health(safe_hp, safe_max)
 	if safe_hp < previous_hp:
+		damaged.emit(previous_hp - safe_hp, safe_hp)
 		_play_hit_flash()
 
 
@@ -737,6 +778,9 @@ func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_t
 		applied_damage = int(applied_result)
 	if applied_damage <= 0:
 		return
+	_emit_confirmed_melee_hit_event(attack_type, target_damageable_id, applied_damage)
+	if multiplayer.has_multiplayer_peer():
+		_rpc_broadcast_melee_hit.rpc(attack_type, target_damageable_id, applied_damage)
 	if target_damageable is Avatar:
 		var damaged_avatar: Avatar = target_damageable as Avatar
 		if damaged_avatar.combat:
@@ -796,6 +840,17 @@ func _rpc_sync_health(new_hp: int, new_max_hp: int) -> void:
 	_apply_synced_health(new_hp, new_max_hp)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_broadcast_melee_hit(attack_type: int, target_damageable_id: int, damage: int) -> void:
+	if multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	var host_id: int = _resolve_host_peer_id()
+	if sender_id != host_id:
+		return
+	_emit_confirmed_melee_hit_event(attack_type, target_damageable_id, damage)
+
+
 func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
 	var safe_max: int = maxi(new_max_hp, 1)
 	var safe_hp: int = clampi(new_hp, 0, safe_max)
@@ -804,13 +859,38 @@ func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
 	_network_hp = safe_hp
 
 	if combat:
+		var previous_hp: int = combat.hp
 		var hp_changed: bool = combat.hp != safe_hp or combat.max_hp != safe_max
 		combat.max_hp = safe_max
 		combat.hp = safe_hp
 		if hp_changed:
 			combat.hp_changed.emit(combat.hp, combat.max_hp)
+		if safe_hp < previous_hp:
+			damaged.emit(previous_hp - safe_hp, safe_hp)
 	elif health_bar:
 		health_bar.set_health(safe_hp, safe_max)
+
+
+func _update_run_vfx_state(speed_value: float) -> void:
+	var should_run: bool = speed_value >= run_vfx_speed_threshold
+	if combat != null:
+		should_run = should_run and combat.state == CharacterCombat.CombatState.READY
+	if _vfx_is_running == should_run:
+		return
+	_vfx_is_running = should_run
+	if should_run:
+		run_started.emit(speed_value)
+	else:
+		run_stopped.emit()
+
+
+func _emit_confirmed_melee_hit_event(attack_type: int, target_damageable_id: int, damage: int) -> void:
+	if damage <= 0:
+		return
+	if attack_type == ATTACK_TYPE_HEAVY:
+		heavy_melee_hit.emit(target_damageable_id, damage)
+		return
+	light_melee_hit.emit(target_damageable_id, damage)
 
 
 func _find_damageable_by_id(target_damageable_id: int) -> Node:

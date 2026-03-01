@@ -20,8 +20,13 @@
 [ext_resource type="Script" uid="uid://c2pxmdnqi5xhr" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
 [ext_resource type="Script" uid="uid://befkpl4atq0v8" path="res://avatar/scripts/avatar_healthbar.gd" id="21_v6bhq"]
 [ext_resource type="Script" uid="uid://bo3s6y1y07udf" path="res://avatar/scripts/avatar_melee_controller.gd" id="22_f7k2s"]
-[ext_resource type="Script" path="res://avatar/scripts/avatar_inventory.gd" id="23_inventory"]
-[ext_resource type="Script" path="res://avatar/scripts/avatar_inventory_debug_ui.gd" id="24_inventory_ui"]
+[ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://avatar/scripts/avatar_inventory.gd" id="23_inventory"]
+[ext_resource type="Script" uid="uid://iudrkxv08die" path="res://avatar/scripts/avatar_inventory_debug_ui.gd" id="24_inventory_ui"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_vfx.gd" id="25_avatar_vfx"]
+[ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/hit.wav" id="26_vfx_hit_audio"]
+[ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/explode.wav" id="27_vfx_explode_audio"]
+[ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/sound_hit.wav" id="28_vfx_sound_hit_audio"]
+[ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -56,7 +61,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.0
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_cicn1"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2lqj0"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_7rsio")
@@ -77,7 +82,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.00000007125
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_crnoc"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ikdsc"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_i2pr5")
@@ -151,8 +156,8 @@ bones/3/rotation = Quaternion(3.6163585e-06, 0.9926478, -0.12103824, 2.9658153e-
 bones/4/position = Vector3(-0.95397174, 1.9259034, 0.7863068)
 
 [node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1498472455]
-surface_material_override/0 = SubResource("ShaderMaterial_cicn1")
-surface_material_override/1 = SubResource("ShaderMaterial_crnoc")
+surface_material_override/0 = SubResource("ShaderMaterial_2lqj0")
+surface_material_override/1 = SubResource("ShaderMaterial_ikdsc")
 
 [node name="LHand" type="BoneAttachment3D" parent="Armature/Skeleton3D" index="1" unique_id=1431740651]
 transform = Transform3D(2.3595529, 8.754432e-08, -6.3517336e-07, -6.4069627e-07, 0.23044589, -2.348274, -2.5087502e-08, 2.348274, 0.23044616, -1.0926979, 4.2249002, -0.7596797)
@@ -216,17 +221,38 @@ script = ExtResource("8_66k0b")
 [node name="MeleeController" type="Node" parent="." index="6" unique_id=900169493]
 script = ExtResource("22_f7k2s")
 
-[node name="HealthBar" type="Node3D" parent="." index="7" unique_id=1808842437]
+[node name="AvatarVfx" type="Node3D" parent="." index="7"]
+script = ExtResource("25_avatar_vfx")
+run_loop_sfx = ExtResource("28_vfx_sound_hit_audio")
+light_melee_whoosh_sfx = ExtResource("26_vfx_hit_audio")
+heavy_melee_whoosh_sfx = ExtResource("27_vfx_explode_audio")
+light_melee_hit_sfx = ExtResource("26_vfx_hit_audio")
+heavy_melee_hit_sfx = ExtResource("27_vfx_explode_audio")
+parry_sfx = ExtResource("26_vfx_hit_audio")
+stun_sfx = ExtResource("28_vfx_sound_hit_audio")
+damaged_sfx = ExtResource("26_vfx_hit_audio")
+death_sfx = ExtResource("27_vfx_explode_audio")
+revive_sfx = ExtResource("26_vfx_hit_audio")
+light_melee_swing_vfx = ExtResource("29_sample_hit_vfx")
+heavy_melee_swing_vfx = ExtResource("29_sample_hit_vfx")
+light_melee_hit_vfx = ExtResource("29_sample_hit_vfx")
+heavy_melee_hit_vfx = ExtResource("29_sample_hit_vfx")
+parry_vfx = ExtResource("29_sample_hit_vfx")
+stun_vfx = ExtResource("29_sample_hit_vfx")
+damage_vfx = ExtResource("29_sample_hit_vfx")
+death_vfx = ExtResource("29_sample_hit_vfx")
+revive_vfx = ExtResource("29_sample_hit_vfx")
+
+[node name="HealthBar" type="Node3D" parent="." index="8" unique_id=1808842437]
 script = ExtResource("21_v6bhq")
 height_offset = 3.0
 panel_size = Vector2i(320, 120)
 
-[node name="Inventory" type="Node" parent="." index="8"]
+[node name="Inventory" type="Node" parent="." index="9" unique_id=871050608]
 script = ExtResource("23_inventory")
 
-[node name="InventoryDebugUI" type="CanvasLayer" parent="." index="9"]
+[node name="InventoryDebugUI" type="CanvasLayer" parent="." index="10" unique_id=792165495]
 script = ExtResource("24_inventory_ui")
-visible = false
 
-[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="10" unique_id=2020533423]
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="11" unique_id=2020533423]
 script = ExtResource("20_w4c3n")

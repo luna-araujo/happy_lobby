@@ -1,0 +1,14 @@
+Source repository:
+- https://github.com/godotengine/godot-demo-projects
+
+Downloaded sample VFX textures:
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/spark_particle2.png
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/smoke_particle.png
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/fire_particle.png
+
+Downloaded sample SFX:
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/platformer/enemy/hit.wav
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/platformer/enemy/explode.wav
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/physics_platformer/audio/sound_hit.wav
+
+Check upstream repository for license and attribution details.
