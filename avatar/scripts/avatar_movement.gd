@@ -14,6 +14,7 @@ signal movement_updated(horizontal_speed: float)
 @export var turn_speed: float = 18.0
 @export var facing_offset_degrees: float = 0.0
 @export var combat_path: NodePath = NodePath("../CharacterCombat")
+@export var heavy_melee_impulse_strength: float = 10.0
 
 var combat: CharacterCombat
 
@@ -34,14 +35,38 @@ func _ready() -> void:
 	combat = get_node_or_null(combat_path) as CharacterCombat
 
 
-func _is_parrying() -> bool:
-	return combat != null and combat.state == CharacterCombat.CombatState.PARRYING
+func _is_movement_locked_by_combat() -> bool:
+	if combat == null:
+		return false
+	return combat.state == CharacterCombat.CombatState.PARRYING or combat.is_melee_state()
+
+
+func _is_heavy_melee_active() -> bool:
+	return combat != null and combat.state == CharacterCombat.CombatState.HEAVY_MELEE
+
+
+func apply_heavy_melee_impulse_from_camera(amount: float = -1.0) -> void:
+	if not is_multiplayer_authority():
+		return
+
+	var camera := get_viewport().get_camera_3d()
+	var cam_forward := Vector3.FORWARD
+	if camera:
+		cam_forward = -camera.global_transform.basis.z
+	cam_forward.y = 0.0
+	if cam_forward.length_squared() <= 0.0:
+		return
+	cam_forward = cam_forward.normalized()
+
+	var impulse_amount := heavy_melee_impulse_strength if amount < 0.0 else amount
+	velocity.x += cam_forward.x * impulse_amount
+	velocity.z += cam_forward.z * impulse_amount
 
 
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
-	var is_parrying := _is_parrying()
+	var movement_locked := _is_movement_locked_by_combat()
 
 	# Add the gravity.
 	if not is_on_floor():
@@ -50,11 +75,11 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * gravity_scale * delta
 
 	# Handle jump.
-	if not is_parrying and Input.is_action_just_pressed("move_jump") and is_on_floor():
+	if not movement_locked and Input.is_action_just_pressed("move_jump") and is_on_floor():
 		velocity.y = _get_jump_velocity()
 
 	# Camera-relative movement on the horizon plane.
-	var input_dir := Vector2.ZERO if is_parrying else Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var input_dir := Vector2.ZERO if movement_locked else Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 	var camera := get_viewport().get_camera_3d()
 	var cam_forward := Vector3.FORWARD
@@ -70,8 +95,8 @@ func _physics_process(delta: float) -> void:
 	var move_direction := (cam_right * input_dir.x + cam_forward * -input_dir.y).normalized()
 	var target_velocity := move_direction * move_speed
 	var has_input := input_dir.length() > 0.0
-	if is_parrying and is_on_floor():
-		# While parrying on the ground, block movement input and bleed horizontal momentum.
+	if movement_locked and is_on_floor():
+		# While combat-locked on the ground, block movement input and bleed horizontal momentum.
 		velocity.x = move_toward(velocity.x, 0.0, parry_deceleration * delta)
 		velocity.z = move_toward(velocity.z, 0.0, parry_deceleration * delta)
 	elif is_on_floor():
@@ -86,7 +111,10 @@ func _physics_process(delta: float) -> void:
 
 	# Character faces movement direction.
 	var facing_offset_radians := deg_to_rad(facing_offset_degrees)
-	if move_direction.length_squared() > 0.0:
+	if _is_heavy_melee_active() and cam_forward.length_squared() > 0.0:
+		var heavy_target_yaw := atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
+		rotation.y = lerp_angle(rotation.y, heavy_target_yaw, turn_speed * delta)
+	elif move_direction.length_squared() > 0.0:
 		var move_yaw := atan2(-move_direction.x, -move_direction.z) + facing_offset_radians
 		rotation.y = lerp_angle(rotation.y, move_yaw, turn_speed * delta)
 

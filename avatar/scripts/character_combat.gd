@@ -10,7 +10,8 @@ signal revived
 
 enum CombatState {
 	READY,
-	PUNCHING,
+	QUICK_MELEE,
+	HEAVY_MELEE,
 	PARRYING,
 	STUNNED,
 	DEAD
@@ -18,15 +19,20 @@ enum CombatState {
 
 @export var max_hp: int = 100
 @export var hp: int = 100
-@export var punch_duration: float = 0.25
+@export var quick_melee_duration: float = 0.2
+@export var heavy_melee_duration: float = 0.45
 @export var parry_duration: float = 0.35
+@export var parry_cooldown: float = 0.6
 @export var default_stun_duration: float = 1.0
 
 var state: int = CombatState.READY
 var _state_token: int = 0
+var _next_parry_time_ms: int = 0
 
 
 func _ready() -> void:
+	# Always start from READY unless hp is truly zero.
+	state = CombatState.READY
 	max_hp = maxi(1, max_hp)
 	hp = clampi(hp, 0, max_hp)
 	if hp <= 0:
@@ -42,17 +48,36 @@ func is_dead() -> bool:
 	return state == CombatState.DEAD
 
 
-func start_punch() -> bool:
+func start_quick_melee() -> bool:
 	if not _can_start_action():
 		return false
-	_set_state(CombatState.PUNCHING)
-	_schedule_state_reset(CombatState.PUNCHING, punch_duration, _state_token)
+	_set_state(CombatState.QUICK_MELEE)
 	return true
+
+
+func start_heavy_melee() -> bool:
+	if not _can_start_action():
+		return false
+	_set_state(CombatState.HEAVY_MELEE)
+	return true
+
+
+func start_punch() -> bool:
+	return start_quick_melee()
+
+
+func is_melee_state() -> bool:
+	return state == CombatState.QUICK_MELEE or state == CombatState.HEAVY_MELEE
 
 
 func start_parry() -> bool:
 	if not _can_start_action():
 		return false
+	if not can_start_parry():
+		return false
+
+	var now_ms := Time.get_ticks_msec()
+	_next_parry_time_ms = now_ms + int(maxf(parry_cooldown, 0.0) * 1000.0)
 	_set_state(CombatState.PARRYING)
 	_schedule_state_reset(CombatState.PARRYING, parry_duration, _state_token)
 	return true
@@ -65,6 +90,26 @@ func stun(duration: float = -1.0) -> bool:
 	var stun_time := default_stun_duration if duration < 0.0 else duration
 	_set_state(CombatState.STUNNED)
 	_schedule_state_reset(CombatState.STUNNED, stun_time, _state_token)
+	return true
+
+
+func can_start_parry() -> bool:
+	if state != CombatState.READY:
+		return false
+	return Time.get_ticks_msec() >= _next_parry_time_ms
+
+
+func get_parry_cooldown_remaining() -> float:
+	var remaining_ms := _next_parry_time_ms - Time.get_ticks_msec()
+	return maxf(float(remaining_ms) / 1000.0, 0.0)
+
+
+func finish_melee_state(expected_state: int = -1) -> bool:
+	if not is_melee_state():
+		return false
+	if expected_state != -1 and state != expected_state:
+		return false
+	_set_state(CombatState.READY)
 	return true
 
 
@@ -83,7 +128,7 @@ func apply_damage(amount: int) -> int:
 
 	if hp <= 0:
 		kill()
-	elif state == CombatState.PUNCHING:
+	elif is_melee_state():
 		stun()
 
 	return applied
