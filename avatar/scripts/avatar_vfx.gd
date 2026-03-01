@@ -48,6 +48,7 @@ var _oneshot_player_index: int = 0
 var _heavy_charge_glow_sprite: Sprite3D
 var _heavy_charge_glow_tween: Tween
 var _heavy_charge_glow_alpha: float = 0.0
+var _heavy_charge_glow_enabled: bool = false
 
 
 func _ready() -> void:
@@ -60,7 +61,14 @@ func _ready() -> void:
 	_setup_audio_players()
 	_setup_heavy_charge_glow_sprite()
 	_connect_avatar_signals()
-	_connect_combat_signals()
+
+
+func _process(_delta: float) -> void:
+	var should_enable: bool = false
+	if avatar != null and avatar.combat != null:
+		should_enable = avatar.combat.state == CharacterCombat.CombatState.HEAVY_MELEE
+	if should_enable != _heavy_charge_glow_enabled:
+		_set_heavy_charge_glow_enabled(should_enable)
 
 
 func _setup_audio_players() -> void:
@@ -111,16 +119,6 @@ func _connect_avatar_signals() -> void:
 		avatar.revived.connect(_on_revived)
 
 
-func _connect_combat_signals() -> void:
-	if avatar == null:
-		return
-	if avatar.combat == null:
-		return
-	if not avatar.combat.state_changed.is_connected(_on_combat_state_changed):
-		avatar.combat.state_changed.connect(_on_combat_state_changed)
-	_on_combat_state_changed(-1, avatar.combat.state)
-
-
 func _setup_heavy_charge_glow_sprite() -> void:
 	var glow_parent: Node3D = _left_hand_anchor
 	if glow_parent == null:
@@ -142,18 +140,12 @@ func _setup_heavy_charge_glow_sprite() -> void:
 	glow_parent.add_child(_heavy_charge_glow_sprite)
 
 
-func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
-	if new_state == CharacterCombat.CombatState.HEAVY_MELEE:
-		_set_heavy_charge_glow_enabled(true)
-	else:
-		_set_heavy_charge_glow_enabled(false)
-
-
 func _on_light_melee_started() -> void:
 	_play_one_shot(light_melee_whoosh_sfx, _anchor_position(_right_hand_anchor))
 
 
 func _on_heavy_melee_started() -> void:
+	_set_heavy_charge_glow_enabled(true)
 	_play_one_shot(heavy_melee_whoosh_sfx, _anchor_position(_left_hand_anchor))
 
 
@@ -321,6 +313,7 @@ func _can_play_audio() -> bool:
 func _set_heavy_charge_glow_enabled(is_enabled: bool) -> void:
 	if _heavy_charge_glow_sprite == null:
 		return
+	_heavy_charge_glow_enabled = is_enabled
 	if _heavy_charge_glow_tween != null and _heavy_charge_glow_tween.is_valid():
 		_heavy_charge_glow_tween.kill()
 	var target_alpha: float = 0.0
