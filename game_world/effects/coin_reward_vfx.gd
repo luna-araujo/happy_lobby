@@ -4,6 +4,9 @@ extends Node3D
 @export var flight_duration: float = 0.55
 @export var arc_height: float = 1.2
 @export var initial_height_offset: float = 0.8
+@export var coin_base_color: Color = Color(1.0, 0.82, 0.15, 1.0)
+@export var coin_emission_color: Color = Color(1.0, 0.86, 0.25, 1.0)
+@export var coin_emission_energy: float = 5.5
 
 var target_player_id: int = 0
 var reward_amount: int = 0
@@ -19,6 +22,7 @@ func _ready() -> void:
 	if _audio_player != null and _audio_player.stream == null:
 		_audio_player.stream = _build_coin_sound_stream()
 	if _coin_visual_root != null:
+		_apply_gold_material_to_coin()
 		_coin_visual_root.rotate_y(randf() * TAU)
 
 
@@ -114,3 +118,22 @@ func _build_coin_sound_stream() -> AudioStreamWAV:
 	stream.stereo = false
 	stream.data = pcm_data
 	return stream
+
+
+func _apply_gold_material_to_coin() -> void:
+	if _coin_visual_root == null:
+		return
+	var mesh_nodes: Array = _coin_visual_root.find_children("*", "MeshInstance3D", true, false)
+	for mesh_node in mesh_nodes:
+		if not (mesh_node is MeshInstance3D):
+			continue
+		var mesh_instance: MeshInstance3D = mesh_node as MeshInstance3D
+		var gold_material: StandardMaterial3D = StandardMaterial3D.new()
+		gold_material.albedo_color = coin_base_color
+		gold_material.metallic = 1.0
+		gold_material.roughness = 0.16
+		gold_material.specular = 1.0
+		gold_material.emission_enabled = true
+		gold_material.emission = coin_emission_color
+		gold_material.emission_energy_multiplier = maxf(coin_emission_energy, 0.0)
+		mesh_instance.material_override = gold_material
