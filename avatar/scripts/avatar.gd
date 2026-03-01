@@ -9,11 +9,7 @@ var player_id: int:
 		return _player_id
 	set(id):
 		_player_id = id
-		if is_instance_valid(movement_body):
-			movement_body.set_multiplayer_authority(id)
-		var player_input := get_node_or_null("PlayerInput")
-		if player_input:
-			player_input.set_multiplayer_authority(id)
+		_apply_player_authority()
 		call_deferred("refresh_authority_state")
 
 var animation_player: AvatarAnimations
@@ -23,6 +19,53 @@ var third_person_camera: ThirdPersonCamera
 var combat: CharacterCombat
 var parry_fx: Node3D
 @export var parry_fx_path: NodePath = NodePath("Armature/ParryFX")
+@export var heavy_melee_hold_threshold: float = 0.25
+@export var show_combat_debug: bool = true
+
+var _melee_press_time_ms: int = -1
+var _melee_pressed: bool = false
+var _heavy_melee_triggered: bool = false
+var _debug_layer: CanvasLayer
+var _debug_label: Label
+var _applying_network_combat_state: bool = false
+
+var _network_animation_state: StringName = &"Locomotion"
+var network_animation_state: StringName:
+	get:
+		return _network_animation_state
+	set(value):
+		if _network_animation_state == value:
+			return
+		_network_animation_state = value
+		if _is_local_controlled():
+			return
+		if is_instance_valid(animation_player):
+			animation_player.set_network_tree_state(value)
+
+var _network_move_speed: float = 0.0
+var network_move_speed: float:
+	get:
+		return _network_move_speed
+	set(value):
+		if is_equal_approx(_network_move_speed, value):
+			return
+		_network_move_speed = value
+		if _is_local_controlled():
+			return
+		if is_instance_valid(animation_player):
+			animation_player.set_network_locomotion_speed(value)
+
+var _network_combat_state: int = CharacterCombat.CombatState.READY
+var network_combat_state: int:
+	get:
+		return _network_combat_state
+	set(value):
+		if _network_combat_state == value:
+			return
+		_network_combat_state = value
+		if _is_local_controlled():
+			return
+		_apply_network_combat_state(value)
 
 var char_name: String = "noName"
 var skin_tone: Color = Color("f2b089")
@@ -51,6 +94,7 @@ func _ready() -> void:
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
 	if not parry_fx:
 		parry_fx = find_child("ParryFX", true, false) as Node3D
+	_apply_player_authority()
 
 	if customization:
 		customization.customized.connect(_on_customization_changed)
@@ -68,7 +112,21 @@ func _ready() -> void:
 	if not parry_fx:
 		printerr("ParryFX node is missing from Avatar scene.")
 
+	_setup_debug_overlay()
+	if combat:
+		network_combat_state = combat.state
 	refresh_authority_state()
+
+
+func _apply_player_authority() -> void:
+	if is_instance_valid(movement_body):
+		movement_body.set_multiplayer_authority(_player_id)
+	var player_input := get_node_or_null("PlayerInput")
+	if player_input:
+		player_input.set_multiplayer_authority(_player_id)
+	var state_sync := get_node_or_null("StateSync")
+	if state_sync:
+		state_sync.set_multiplayer_authority(_player_id)
 
 
 func _on_customization_changed() -> void:
@@ -76,7 +134,7 @@ func _on_customization_changed() -> void:
 
 
 func refresh_authority_state() -> void:
-	var local_player := player_id == multiplayer.get_unique_id()
+	var local_player := _is_local_controlled()
 
 	if local_player:
 		if not customized.is_connected(_on_customized_send):
@@ -86,23 +144,65 @@ func refresh_authority_state() -> void:
 		if customized.is_connected(_on_customized_send):
 			customized.disconnect(_on_customized_send)
 
-	if local_player and third_person_camera:
-		third_person_camera.make_current()
+	if third_person_camera:
+		third_person_camera.set_active(local_player)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if player_id != multiplayer.get_unique_id():
+func _process(_delta: float) -> void:
+	var is_local := _is_local_controlled()
+	if is_local:
+		if is_instance_valid(animation_player):
+			network_animation_state = StringName(animation_player.get_desired_tree_state_name())
+		if is_instance_valid(movement_body):
+			network_move_speed = movement_body.get_horizontal_speed()
+	if not is_local:
+		_update_debug_overlay(false)
 		return
-	if event.is_echo():
-		return
-	if event.is_action_pressed("parry"):
+
+	if Input.is_action_just_pressed("parry"):
 		start_parry()
+
+	if Input.is_action_just_pressed("melee"):
+		_melee_press_time_ms = Time.get_ticks_msec()
+		_melee_pressed = true
+		_heavy_melee_triggered = false
+
+	if Input.is_action_just_released("melee"):
+		_melee_press_time_ms = -1
+		_melee_pressed = false
+		if not _heavy_melee_triggered:
+			start_quick_melee()
+		_heavy_melee_triggered = false
+
+	if _melee_pressed and not _heavy_melee_triggered and _melee_press_time_ms >= 0 and Input.is_action_pressed("melee"):
+		var held_seconds: float = float(Time.get_ticks_msec() - _melee_press_time_ms) / 1000.0
+		if held_seconds >= heavy_melee_hold_threshold:
+			if start_heavy_melee():
+				_heavy_melee_triggered = true
+
+	_update_debug_overlay(true)
 
 
 func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
-	if not parry_fx:
+	if parry_fx:
+		parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
+	if _applying_network_combat_state:
 		return
-	parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
+	if _is_local_controlled():
+		network_combat_state = new_state
+
+
+func _apply_network_combat_state(new_state: int) -> void:
+	if not combat:
+		return
+	if combat.state == new_state:
+		return
+
+	_applying_network_combat_state = true
+	var previous_state := combat.state
+	combat.state = new_state
+	combat.state_changed.emit(previous_state, new_state)
+	_applying_network_combat_state = false
 
 
 func play_anim_once(anim_name: String) -> void:
@@ -151,7 +251,15 @@ func change_polygon_texture(polygon_name: String, texture_path: String) -> void:
 
 
 func start_punch() -> bool:
-	return combat.start_punch() if combat else false
+	return start_quick_melee()
+
+
+func start_quick_melee() -> bool:
+	return combat.start_quick_melee() if combat else false
+
+
+func start_heavy_melee() -> bool:
+	return combat.start_heavy_melee() if combat else false
 
 
 func start_parry() -> bool:
@@ -168,6 +276,91 @@ func apply_damage(amount: int) -> int:
 
 func heal(amount: int) -> int:
 	return combat.heal(amount) if combat else 0
+
+
+func _setup_debug_overlay() -> void:
+	if not show_combat_debug:
+		return
+	if is_instance_valid(_debug_layer):
+		return
+
+	_debug_layer = CanvasLayer.new()
+	_debug_layer.layer = 100
+	_debug_layer.name = "CombatDebugLayer"
+	add_child(_debug_layer)
+
+	_debug_label = Label.new()
+	_debug_label.name = "CombatDebugLabel"
+	_debug_label.position = Vector2(12.0, 12.0)
+	_debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_debug_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_debug_layer.add_child(_debug_label)
+
+
+func _update_debug_overlay(is_local: bool) -> void:
+	if not show_combat_debug:
+		return
+	if not is_instance_valid(_debug_layer) or not is_instance_valid(_debug_label):
+		return
+
+	_debug_layer.visible = is_local
+	if not is_local:
+		return
+
+	var combat_state_name := "NO_COMBAT"
+	var hp_text := "n/a"
+	var parry_cd := 0.0
+	if combat:
+		combat_state_name = _combat_state_name(combat.state)
+		hp_text = "%d/%d" % [combat.hp, combat.max_hp]
+		parry_cd = combat.get_parry_cooldown_remaining()
+
+	var tree_state := ""
+	var desired_tree_state := ""
+	var current_anim := ""
+	if animation_player:
+		tree_state = animation_player.get_current_tree_state_name()
+		desired_tree_state = animation_player.get_desired_tree_state_name()
+		current_anim = String(animation_player.current_animation)
+
+	_debug_label.text = "\n".join([
+		"Combat Debug",
+		"Player Local ID: %d | Avatar Player ID: %d" % [multiplayer.get_unique_id(), player_id],
+		"HP: %s" % hp_text,
+		"Combat State: %s" % combat_state_name,
+		"Parry CD: %.2fs" % parry_cd,
+		"Melee Pressed: %s | Heavy Triggered: %s" % [str(_melee_pressed), str(_heavy_melee_triggered)],
+		"Input Melee: %s | Input Parry: %s" % [str(Input.is_action_pressed("melee")), str(Input.is_action_pressed("parry"))],
+		"Tree Current: %s | Tree Desired: %s" % [tree_state, desired_tree_state],
+		"AnimationPlayer Current: %s" % current_anim
+	])
+
+
+func _combat_state_name(state_value: int) -> String:
+	match state_value:
+		CharacterCombat.CombatState.READY:
+			return "READY"
+		CharacterCombat.CombatState.QUICK_MELEE:
+			return "QUICK_MELEE"
+		CharacterCombat.CombatState.HEAVY_MELEE:
+			return "HEAVY_MELEE"
+		CharacterCombat.CombatState.PARRYING:
+			return "PARRYING"
+		CharacterCombat.CombatState.STUNNED:
+			return "STUNNED"
+		CharacterCombat.CombatState.DEAD:
+			return "DEAD"
+	return "UNKNOWN(%d)" % state_value
+
+
+func _is_local_controlled() -> bool:
+	if not multiplayer.has_multiplayer_peer():
+		return true
+	if player_id == multiplayer.get_unique_id():
+		return true
+	if movement_body and movement_body.is_multiplayer_authority():
+		return true
+	return false
 
 
 static func store_save(character: Avatar) -> void:

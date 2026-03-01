@@ -76,6 +76,16 @@ func is_current() -> bool:
 	return camera_3d.is_current()
 
 
+func set_active(active: bool) -> void:
+	if active:
+		make_current()
+		return
+
+	camera_3d.current = false
+	if capture_mouse_on_ready and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
 func make_current() -> void:
 	camera_3d.make_current()
 	if capture_mouse_on_ready:

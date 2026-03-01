@@ -8,8 +8,16 @@
 [ext_resource type="Shader" uid="uid://ehviu7el0s1c" path="res://avatar/shaders/avatar.gdshader" id="4_hob7b"]
 [ext_resource type="Material" uid="uid://bfgs8euqeerx7" path="res://avatar/effects/materials/force_shield.tres" id="5_tsqth"]
 [ext_resource type="Script" uid="uid://pi0gmsinan1j" path="res://avatar/scripts/avatar_customization.gd" id="6_tvj50"]
+[ext_resource type="Animation" uid="uid://bimwsdufwp0vh" path="res://avatar/animations/heavy_melee.anim" id="7_6ijqo"]
 [ext_resource type="Script" uid="uid://cc2nrubvwkro2" path="res://avatar/scripts/avatar_animations.gd" id="7_acn83"]
 [ext_resource type="Script" uid="uid://dnrno3uw2qyki" path="res://avatar/scripts/character_combat.gd" id="8_66k0b"]
+[ext_resource type="Animation" uid="uid://bn1kalrj3da12" path="res://avatar/animations/idle.anim" id="8_s4lrm"]
+[ext_resource type="Animation" uid="uid://bdvphf3e3xing" path="res://avatar/animations/light_melee.anim" id="9_260y4"]
+[ext_resource type="Animation" uid="uid://cpuuqe51bhdwm" path="res://avatar/animations/parry.anim" id="10_wth05"]
+[ext_resource type="Animation" uid="uid://d3kdpqfdrhdb" path="res://avatar/animations/run.anim" id="11_cicn1"]
+[ext_resource type="Animation" uid="uid://cqdvf1p1ofef5" path="res://avatar/animations/stun.anim" id="12_crnoc"]
+[ext_resource type="AnimationNodeStateMachine" uid="uid://4t66n82m0rja" path="res://avatar/animations/anim_tree.tres" id="14_s4lrm"]
+[ext_resource type="Script" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -44,7 +52,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.0
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_e2epo"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_260y4"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_7rsio")
@@ -65,7 +73,7 @@ shader = ExtResource("3_tsqth")
 shader_parameter/outline_width_px = 2.00000007125
 shader_parameter/outline_color = Color(0.03, 0.03, 0.03, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_mdry8"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wth05"]
 resource_local_to_scene = true
 render_priority = 0
 next_pass = SubResource("ShaderMaterial_i2pr5")
@@ -84,11 +92,21 @@ shader_parameter/hit_glow = 0.0
 radius = 1.1713867
 height = 5.905945
 
-[node name="Avatar" unique_id=750895988 instance=ExtResource("1_bnsy6")]
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ywx11"]
+_data = {
+&"heavy_melee": ExtResource("7_6ijqo"),
+&"idle": ExtResource("8_s4lrm"),
+&"light_melee": ExtResource("9_260y4"),
+&"parry": ExtResource("10_wth05"),
+&"run": ExtResource("11_cicn1"),
+&"stun": ExtResource("12_crnoc")
+}
+
+[node name="Avatar" unique_id=599124838 instance=ExtResource("1_bnsy6")]
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
 script = ExtResource("2_ko7hc")
 
-[node name="Armature" parent="." index="0" unique_id=1679925851]
+[node name="Armature" parent="." index="0" unique_id=1788504691]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 script = ExtResource("3_hob7b")
 jump_speed_multiplier = 3.0
@@ -113,26 +131,31 @@ randomness = 0.35
 process_material = SubResource("ParticleProcessMaterial_fmcn2")
 draw_pass_1 = SubResource("BoxMesh_k2brx")
 
-[node name="Skeleton3D" parent="Armature" index="1" unique_id=1757181006]
-bones/1/rotation = Quaternion(-3.9731034e-08, 0.9999991, 0.0013297553, -2.98778e-05)
-bones/2/position = Vector3(1.3629407, 1.7070854, 0.03732677)
-bones/3/position = Vector3(-6.5136015e-07, 4.098549, 0.010900396)
-bones/3/rotation = Quaternion(-3.973107e-08, 0.9999991, 0.0013297845, 2.9877796e-05)
-bones/4/position = Vector3(-1.3629447, 1.7070854, 0.037163887)
+[node name="Skeleton3D" parent="Armature" index="1" unique_id=31233995]
+bones/1/scale = Vector3(0.995941, 0.99594134, 0.99594104)
+bones/2/position = Vector3(1.4460976, 1.1357661, 0.06351851)
+bones/3/rotation = Quaternion(0.042060535, 0.93960065, 0.33768934, -0.036710676)
+bones/4/position = Vector3(-1.4301324, 1.2183746, 0.04693816)
 
-[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1808329876]
-surface_material_override/0 = SubResource("ShaderMaterial_e2epo")
-surface_material_override/1 = SubResource("ShaderMaterial_mdry8")
+[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=497237384]
+surface_material_override/0 = SubResource("ShaderMaterial_260y4")
+surface_material_override/1 = SubResource("ShaderMaterial_wth05")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Armature" index="2" unique_id=900483586]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0681973, 0)
 shape = SubResource("CapsuleShape3D_k2brx")
 
-[node name="AnimationPlayer" parent="." index="1" unique_id=1589217253]
-autoplay = &"Idle"
+[node name="AnimationPlayer" parent="." index="1" unique_id=1628559675]
+libraries/anim = SubResource("AnimationLibrary_ywx11")
+autoplay = &"idle"
 script = ExtResource("7_acn83")
 
-[node name="ThirdPersonCamera" type="Node3D" parent="." index="2" unique_id=183585733]
+[node name="AnimationTree" type="AnimationTree" parent="." index="2" unique_id=2048553066]
+tree_root = ExtResource("14_s4lrm")
+anim_player = NodePath("../AnimationPlayer")
+parameters/Locomotion/blend_position = 0.0
+
+[node name="ThirdPersonCamera" type="Node3D" parent="." index="3" unique_id=183585733]
 script = ExtResource("4_1grw4")
 distance = 12.5
 height_offset = 3.0
@@ -142,11 +165,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.66432, 0)
 
 [node name="Camera3D" type="Camera3D" parent="ThirdPersonCamera/Anchor" index="0" unique_id=662034746]
 transform = Transform3D(-2.5, 0, -2.1855695e-07, 0, 2.5, 0, 2.1855695e-07, 0, -2.5, 0, 0, -17.030458)
-current = true
+current = false
 fov = 90.0
 
-[node name="AvatarCustomization" type="Node" parent="." index="3" unique_id=304234968]
+[node name="AvatarCustomization" type="Node" parent="." index="4" unique_id=304234968]
 script = ExtResource("6_tvj50")
 
-[node name="CharacterCombat" type="Node" parent="." index="4" unique_id=1371078824]
+[node name="CharacterCombat" type="Node" parent="." index="5" unique_id=1371078824]
 script = ExtResource("8_66k0b")
+
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="6"]
+script = ExtResource("20_w4c3n")

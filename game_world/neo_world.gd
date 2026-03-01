@@ -11,15 +11,15 @@ func spawn_player_character(id: int) -> Avatar:
 		return null
 
 	var player_avatar := AVATAR_SCENE.instantiate() as Avatar
-	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.player_id = id
 	player_avatar.name = "Player_%s" % id
+	player_avatar.set_multiplayer_authority(id)
+	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.position = Vector3(
 		randf_range(-spawn_area_size, spawn_area_size),
 		0.0,
 		randf_range(-spawn_area_size, spawn_area_size)
 	)
-	player_avatar.set_multiplayer_authority(id)
 
 	_spawn_player_on_clients.rpc(id, player_avatar.global_position, player_avatar.name)
 	return player_avatar
@@ -57,10 +57,10 @@ func _spawn_player_on_clients(id: int, position: Vector3, player_name: String) -
 	print("Spawning player avatar for ID: %s" % id)
 
 	var player_avatar := AVATAR_SCENE.instantiate() as Avatar
-	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.player_id = id
 	player_avatar.set_multiplayer_authority(id)
 	player_avatar.name = player_name
+	%PlayerCharacters.add_child(player_avatar)
 	player_avatar.global_position = position
 
 
