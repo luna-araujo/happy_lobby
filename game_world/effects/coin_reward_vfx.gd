@@ -138,7 +138,7 @@ func _apply_gold_material_to_coin() -> void:
 		gold_material.albedo_color = coin_base_color
 		gold_material.metallic = 1.0
 		gold_material.roughness = 0.16
-		gold_material.specular = 1.0
+		gold_material.metallic_specular = 1.0
 		gold_material.emission_enabled = true
 		gold_material.emission = coin_emission_color
 		gold_material.emission_energy_multiplier = maxf(coin_emission_energy, 0.0)

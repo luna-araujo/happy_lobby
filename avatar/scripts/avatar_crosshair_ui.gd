@@ -12,6 +12,7 @@ var avatar: Avatar
 var gun_controller: AvatarGunController
 var _root: Control
 var _crosshair_center: Control
+var _crosshair_lines: Array[ColorRect] = []
 
 
 func _ready() -> void:
@@ -47,20 +48,21 @@ func _build_ui() -> void:
 	_crosshair_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_crosshair_center)
 
-	_add_arm(Vector2(-arm_gap - arm_length, -arm_thickness * 0.5), Vector2(arm_length, arm_thickness))
-	_add_arm(Vector2(arm_gap, -arm_thickness * 0.5), Vector2(arm_length, arm_thickness))
-	_add_arm(Vector2(-arm_thickness * 0.5, -arm_gap - arm_length), Vector2(arm_thickness, arm_length))
-	_add_arm(Vector2(-arm_thickness * 0.5, arm_gap), Vector2(arm_thickness, arm_length))
+	_crosshair_lines.append(_add_arm(Vector2(-arm_gap - arm_length, -arm_thickness * 0.5), Vector2(arm_length, arm_thickness)))
+	_crosshair_lines.append(_add_arm(Vector2(arm_gap, -arm_thickness * 0.5), Vector2(arm_length, arm_thickness)))
+	_crosshair_lines.append(_add_arm(Vector2(-arm_thickness * 0.5, -arm_gap - arm_length), Vector2(arm_thickness, arm_length)))
+	_crosshair_lines.append(_add_arm(Vector2(-arm_thickness * 0.5, arm_gap), Vector2(arm_thickness, arm_length)))
 	_add_arm(Vector2(-dot_size * 0.5, -dot_size * 0.5), Vector2(dot_size, dot_size))
 
 
-func _add_arm(offset: Vector2, size: Vector2) -> void:
+func _add_arm(offset: Vector2, size: Vector2) -> ColorRect:
 	var arm: ColorRect = ColorRect.new()
 	arm.color = color
 	arm.position = offset
 	arm.size = size
 	arm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_crosshair_center.add_child(arm)
+	return arm
 
 
 func _update_visibility() -> void:
@@ -72,9 +74,17 @@ func _update_visibility() -> void:
 	if not avatar._is_local_controlled():
 		_root.visible = false
 		return
+	_root.visible = true
+
 	if gun_controller == null:
 		gun_controller = get_node_or_null(gun_controller_path) as AvatarGunController
-	if gun_controller == null:
-		_root.visible = false
-		return
-	_root.visible = gun_controller.is_gun_equipped()
+	var show_aim_lines: bool = false
+	if gun_controller != null:
+		show_aim_lines = gun_controller.is_gun_equipped() and gun_controller.is_aiming()
+	_set_crosshair_lines_visible(show_aim_lines)
+
+
+func _set_crosshair_lines_visible(visible_state: bool) -> void:
+	for line: ColorRect in _crosshair_lines:
+		if line != null:
+			line.visible = visible_state

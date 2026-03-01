@@ -23,6 +23,7 @@ var _status_labels: Dictionary = {}
 var _is_stunned: bool = false
 var _current_hp: int = 100
 var _max_hp: int = 100
+var _hide_for_local_player: bool = false
 
 
 func _ready() -> void:
@@ -54,7 +55,7 @@ func set_health(current_hp: int, max_hp: int) -> void:
 	var safe_hp: int = clampi(current_hp, 0, safe_max)
 	_max_hp = safe_max
 	_current_hp = safe_hp
-	visible = safe_hp > 0
+	_refresh_visibility()
 
 	if not is_instance_valid(_hp_bar) or not is_instance_valid(_hp_label):
 		return
@@ -63,6 +64,11 @@ func set_health(current_hp: int, max_hp: int) -> void:
 	_hp_bar.value = _current_hp
 	_refresh_hp_visual_style()
 	_hp_label.text = "%d/%d" % [_current_hp, _max_hp]
+
+
+func set_hide_for_local_player(hide_for_local_player: bool) -> void:
+	_hide_for_local_player = hide_for_local_player
+	_refresh_visibility()
 
 
 func set_stunned(is_stunned: bool) -> void:
@@ -85,6 +91,10 @@ func _refresh_hp_visual_style() -> void:
 		_hp_bar.modulate = normal_hp_color
 	else:
 		_hp_bar.modulate = low_hp_color
+
+
+func _refresh_visibility() -> void:
+	visible = _current_hp > 0 and not _hide_for_local_player
 
 
 func _build_ui() -> void:

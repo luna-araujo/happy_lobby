@@ -34,10 +34,6 @@ window/subwindows/embed_subwindows=false
 
 enabled=PackedStringArray()
 
-[filesystem]
-
-import/blender/enabled=false
-
 [global_group]
 
 GameWorld="A game world instance"

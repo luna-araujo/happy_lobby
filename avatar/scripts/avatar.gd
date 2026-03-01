@@ -244,6 +244,7 @@ func _ready() -> void:
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
 	if not parry_fx:
 		parry_fx = find_child("ParryFX", true, false) as Node3D
+	_warn_on_skeleton_scale_issues()
 	_apply_player_authority()
 
 	if customization:
@@ -323,6 +324,29 @@ func _apply_player_authority() -> void:
 		state_sync.set_multiplayer_authority(_player_id)
 
 
+func _warn_on_skeleton_scale_issues() -> void:
+	var skeleton_node: Skeleton3D = get_node_or_null("Armature/Skeleton3D") as Skeleton3D
+	if skeleton_node == null:
+		return
+	for bone_index in range(skeleton_node.get_bone_count()):
+		var rest_transform: Transform3D = skeleton_node.get_bone_rest(bone_index)
+		var rest_scale: Vector3 = rest_transform.basis.get_scale()
+		if not _is_unit_scale(rest_scale):
+			var bone_name: String = skeleton_node.get_bone_name(bone_index)
+			push_warning("Non-unit rest scale on bone %s: %s" % [bone_name, rest_scale])
+		if skeleton_node.has_method("get_bone_pose_scale"):
+			var pose_scale_variant: Variant = skeleton_node.call("get_bone_pose_scale", bone_index)
+			if typeof(pose_scale_variant) == TYPE_VECTOR3:
+				var pose_scale: Vector3 = pose_scale_variant as Vector3
+				if not _is_unit_scale(pose_scale):
+					var pose_bone_name: String = skeleton_node.get_bone_name(bone_index)
+					push_warning("Non-unit pose scale on bone %s: %s" % [pose_bone_name, pose_scale])
+
+
+func _is_unit_scale(value: Vector3) -> bool:
+	return is_equal_approx(value.x, 1.0) and is_equal_approx(value.y, 1.0) and is_equal_approx(value.z, 1.0)
+
+
 func _on_customization_changed() -> void:
 	customized.emit()
 
@@ -357,6 +381,8 @@ func refresh_authority_state() -> void:
 		third_person_camera.set_active(local_player)
 	if inventory_debug_ui:
 		inventory_debug_ui.set_local_player_active(local_player)
+	if health_bar:
+		health_bar.set_hide_for_local_player(local_player)
 
 
 func _process(_delta: float) -> void:

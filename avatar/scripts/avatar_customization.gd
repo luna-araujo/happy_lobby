@@ -6,9 +6,7 @@ signal customized
 var mesh_instances: Array[MeshInstance3D] = []
 var polygons: Array[MeshInstance3D] = []
 var skeleton: Skeleton3D = null
-var height: float = 1.0
 
-@export var height_scale_target: NodePath = NodePath("../Armature")
 
 const LOCAL_PLAYER_FILE: String = "user://user_avatar.json"
 const COLOR_PARAMS: Array[String] = [
@@ -43,15 +41,6 @@ func refresh_scene_refs() -> void:
 	mesh_instances = _find_mesh_instances(avatar_root)
 	polygons.assign(mesh_instances)
 	_refresh_color_slots()
-
-
-func set_height(new_height: float) -> void:
-	var target := get_node_or_null(height_scale_target) as Node3D
-	if target:
-		var current_scale := target.scale
-		current_scale.y = new_height
-		target.scale = current_scale
-	height = new_height
 
 
 func get_material() -> ShaderMaterial:
@@ -151,7 +140,6 @@ func store_save(path: String = LOCAL_PLAYER_FILE) -> void:
 	var save_data := {
 		"textures": {},
 		"colors": {},
-		"height": height
 	}
 
 	for mesh in mesh_instances:
@@ -224,9 +212,6 @@ func apply_customization_data(data_received: Dictionary) -> void:
 			if normalized_option.is_empty():
 				continue
 			_set_color_internal(normalized_option, Color(colors[param]), false)
-
-	if data_received.has("height"):
-		set_height(float(data_received["height"]))
 
 	customized.emit()
 

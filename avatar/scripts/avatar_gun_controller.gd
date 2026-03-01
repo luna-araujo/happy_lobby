@@ -165,9 +165,7 @@ func request_fire_once() -> void:
 		return
 	if not avatar._is_local_controlled():
 		return
-	if not is_gun_equipped():
-		return
-	if combat != null and not combat.can_act():
+	if not _can_fire_now():
 		return
 	var now_ms: int = Time.get_ticks_msec()
 	var fire_interval_ms: int = int((1.0 / maxf(fire_rate_per_second, 0.01)) * 1000.0)
@@ -209,9 +207,7 @@ func _server_fire_hitscan(ray_origin: Vector3, ray_direction: Vector3) -> void:
 		return
 	if avatar == null:
 		return
-	if not is_gun_equipped():
-		return
-	if combat != null and not combat.can_act():
+	if not _can_fire_now():
 		return
 
 	var now_ms: int = Time.get_ticks_msec()
@@ -275,6 +271,22 @@ func _server_fire_hitscan(ray_origin: Vector3, ray_direction: Vector3) -> void:
 		var hit_avatar: Avatar = target_damageable as Avatar
 		if hit_avatar.combat != null:
 			hit_avatar._send_health_sync_to_owner(hit_avatar.combat.hp, hit_avatar.combat.max_hp)
+
+
+func _can_fire_now() -> bool:
+	if not is_gun_equipped():
+		return false
+	if not _is_aiming:
+		return false
+	if combat == null:
+		return true
+	if not combat.can_act():
+		return false
+	if combat.is_melee_state():
+		return false
+	if combat.state == CharacterCombat.CombatState.PARRYING:
+		return false
+	return true
 
 
 func _setup_feedback_nodes() -> void:
