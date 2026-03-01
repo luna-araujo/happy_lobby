@@ -5,6 +5,7 @@ Downloaded sample VFX textures:
 - https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/spark_particle2.png
 - https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/smoke_particle.png
 - https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/particles/fire_particle.png
+- https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/3d/particles/kenney/smoke_05.png
 
 Downloaded sample SFX:
 - https://raw.githubusercontent.com/godotengine/godot-demo-projects/master/2d/platformer/enemy/hit.wav

@@ -14,6 +14,7 @@ extends Node3D
 @export var heavy_charge_glow_texture: Texture2D
 @export var heavy_charge_glow_color: Color = Color(1.0, 0.72, 0.2, 1.0)
 @export var heavy_charge_glow_size: float = 1.8
+@export var heavy_charge_local_offset: Vector3 = Vector3(0.0, 0.08, 0.06)
 @export var heavy_charge_glow_fade_in_seconds: float = 0.12
 @export var heavy_charge_glow_fade_out_seconds: float = 0.08
 
@@ -49,6 +50,7 @@ var _heavy_charge_glow_sprite: Sprite3D
 var _heavy_charge_glow_tween: Tween
 var _heavy_charge_glow_alpha: float = 0.0
 var _heavy_charge_glow_enabled: bool = false
+var _heavy_charge_glow_anchor: Node3D
 
 
 func _ready() -> void:
@@ -137,7 +139,11 @@ func _setup_heavy_charge_glow_sprite() -> void:
 	_heavy_charge_glow_sprite.double_sided = true
 	_heavy_charge_glow_sprite.no_depth_test = false
 	_heavy_charge_glow_sprite.visible = false
-	glow_parent.add_child(_heavy_charge_glow_sprite)
+	_heavy_charge_glow_anchor = Node3D.new()
+	_heavy_charge_glow_anchor.name = "HeavyChargeGlowAnchor"
+	_heavy_charge_glow_anchor.position = heavy_charge_local_offset
+	glow_parent.add_child(_heavy_charge_glow_anchor)
+	_heavy_charge_glow_anchor.add_child(_heavy_charge_glow_sprite)
 
 
 func _on_light_melee_started() -> void:
@@ -322,6 +328,8 @@ func _set_heavy_charge_glow_enabled(is_enabled: bool) -> void:
 		_heavy_charge_glow_sprite.visible = true
 		_heavy_charge_glow_sprite.texture = heavy_charge_glow_texture
 		_heavy_charge_glow_sprite.scale = Vector3.ONE * maxf(heavy_charge_glow_size, 0.01)
+		if _heavy_charge_glow_anchor != null:
+			_heavy_charge_glow_anchor.position = heavy_charge_local_offset
 		target_alpha = 1.0
 		duration = maxf(heavy_charge_glow_fade_in_seconds, 0.01)
 		_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, _heavy_charge_glow_alpha)
