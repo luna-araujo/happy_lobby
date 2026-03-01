@@ -27,6 +27,7 @@
 [ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/explode.wav" id="27_vfx_explode_audio"]
 [ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/sound_hit.wav" id="28_vfx_sound_hit_audio"]
 [ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
+[ext_resource type="Texture2D" path="res://assets/vfx_samples/textures/fire_particle.png" id="30_heavy_glow_tex"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -223,6 +224,7 @@ script = ExtResource("22_f7k2s")
 
 [node name="AvatarVfx" type="Node3D" parent="." index="7"]
 script = ExtResource("25_avatar_vfx")
+heavy_charge_glow_texture = ExtResource("30_heavy_glow_tex")
 run_loop_sfx = ExtResource("28_vfx_sound_hit_audio")
 light_melee_whoosh_sfx = ExtResource("28_vfx_sound_hit_audio")
 heavy_melee_whoosh_sfx = ExtResource("28_vfx_sound_hit_audio")
