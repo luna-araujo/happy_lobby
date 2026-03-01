@@ -273,9 +273,10 @@ func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
 			melee_controller.begin_quick_swing_window(combat.quick_melee_duration)
 		elif new_state == CharacterCombat.CombatState.HEAVY_MELEE and combat:
 			melee_controller.begin_heavy_swing_window(combat.heavy_melee_duration)
-		elif new_state == CharacterCombat.CombatState.READY:
+		else:
 			melee_controller.anim_disable_quick_hitbox()
 			melee_controller.anim_disable_heavy_hitbox()
+			melee_controller.anim_clear_melee_hit_cache()
 	if _applying_network_combat_state:
 		return
 	if _is_local_controlled():

@@ -299,7 +299,7 @@ func _build_state_machine() -> AnimationNodeStateMachine:
 
 func _add_transition(machine: AnimationNodeStateMachine, from_state: StringName, to_state: StringName, immediate: bool) -> void:
 	var transition := AnimationNodeStateMachineTransition.new()
-	transition.xfade_time = 0.06
+	transition.xfade_time = 0.0 if immediate else 0.06
 	transition.switch_mode = AnimationNodeStateMachineTransition.SWITCH_MODE_IMMEDIATE if immediate else AnimationNodeStateMachineTransition.SWITCH_MODE_AT_END
 	machine.add_transition(from_state, to_state, transition)
 
