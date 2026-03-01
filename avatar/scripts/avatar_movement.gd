@@ -7,10 +7,13 @@ signal movement_updated(horizontal_speed: float)
 @export var acceleration: float = 48.0
 @export var deceleration: float = 56.0
 @export var parry_deceleration: float = 72.0
+@export var quick_melee_deceleration: float = 24.0
+@export var heavy_melee_ground_deceleration: float = 16.0
 @export var air_acceleration: float = 12.0
 @export var jump_height: float = 1.8
 @export var jump_speed_multiplier: float = 1.25
 @export var fall_gravity_multiplier: float = 2.2
+@export var heavy_melee_air_gravity_multiplier: float = 0.2
 @export var turn_speed: float = 18.0
 @export var facing_offset_degrees: float = 0.0
 @export var combat_path: NodePath = NodePath("../CharacterCombat")
@@ -48,6 +51,14 @@ func _is_heavy_melee_active() -> bool:
 	return combat != null and combat.state == CharacterCombat.CombatState.HEAVY_MELEE
 
 
+func _is_quick_melee_active() -> bool:
+	return combat != null and combat.state == CharacterCombat.CombatState.QUICK_MELEE
+
+
+func _is_melee_active() -> bool:
+	return combat != null and combat.is_melee_state()
+
+
 func apply_heavy_melee_impulse_from_camera(amount: float = -1.0) -> void:
 	if not is_multiplayer_authority():
 		return
@@ -61,9 +72,11 @@ func apply_heavy_melee_impulse_from_camera(amount: float = -1.0) -> void:
 		return
 	cam_forward = cam_forward.normalized()
 
-	var impulse_amount := heavy_melee_impulse_strength if amount < 0.0 else amount
-	velocity.x += cam_forward.x * impulse_amount
-	velocity.z += cam_forward.z * impulse_amount
+	var impulse_amount: float = heavy_melee_impulse_strength if amount < 0.0 else amount
+	var current_horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
+	var redirected_speed: float = maxf(current_horizontal_speed, impulse_amount)
+	velocity.x = cam_forward.x * redirected_speed
+	velocity.z = cam_forward.z * redirected_speed
 
 
 func _physics_process(delta: float) -> void:
@@ -74,7 +87,9 @@ func _physics_process(delta: float) -> void:
 	# Add the gravity.
 	if not is_on_floor():
 		var jump_speed_scale: float = maxf(jump_speed_multiplier, 0.01)
-		var gravity_scale := jump_speed_scale * (fall_gravity_multiplier if velocity.y <= 0.0 else 1.0)
+		var gravity_scale: float = jump_speed_scale * (fall_gravity_multiplier if velocity.y <= 0.0 else 1.0)
+		if _is_heavy_melee_active():
+			gravity_scale *= maxf(heavy_melee_air_gravity_multiplier, 0.01)
 		velocity += get_gravity() * gravity_scale * delta
 
 	# Handle jump.
@@ -98,7 +113,15 @@ func _physics_process(delta: float) -> void:
 	var move_direction := (cam_right * input_dir.x + cam_forward * -input_dir.y).normalized()
 	var target_velocity := move_direction * move_speed
 	var has_input := input_dir.length() > 0.0
-	if movement_locked and is_on_floor():
+	if _is_quick_melee_active() and is_on_floor():
+		# Light melee keeps momentum better than hard-locked combat states.
+		velocity.x = move_toward(velocity.x, 0.0, quick_melee_deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, quick_melee_deceleration * delta)
+	elif _is_heavy_melee_active() and is_on_floor():
+		# Heavy charge also keeps ground momentum, but with stronger braking than light melee.
+		velocity.x = move_toward(velocity.x, 0.0, heavy_melee_ground_deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, heavy_melee_ground_deceleration * delta)
+	elif movement_locked and is_on_floor():
 		# While combat-locked on the ground, block movement input and bleed horizontal momentum.
 		velocity.x = move_toward(velocity.x, 0.0, parry_deceleration * delta)
 		velocity.z = move_toward(velocity.z, 0.0, parry_deceleration * delta)
@@ -114,9 +137,9 @@ func _physics_process(delta: float) -> void:
 
 	# Character faces movement direction.
 	var facing_offset_radians := deg_to_rad(facing_offset_degrees)
-	if _is_heavy_melee_active() and cam_forward.length_squared() > 0.0:
-		var heavy_target_yaw := atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
-		rotation.y = lerp_angle(rotation.y, heavy_target_yaw, turn_speed * delta)
+	if _is_melee_active() and cam_forward.length_squared() > 0.0:
+		var melee_target_yaw := atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
+		rotation.y = lerp_angle(rotation.y, melee_target_yaw, turn_speed * delta)
 	elif move_direction.length_squared() > 0.0:
 		var move_yaw := atan2(-move_direction.x, -move_direction.z) + facing_offset_radians
 		rotation.y = lerp_angle(rotation.y, move_yaw, turn_speed * delta)

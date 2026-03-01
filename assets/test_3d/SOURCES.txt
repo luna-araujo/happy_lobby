@@ -1,0 +1,5 @@
+Downloaded from Khronos glTF Sample Models:
+- Box: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/Box
+- Duck: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/Duck
+- BoomBox: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/BoomBox
+Check each model folder for license details.

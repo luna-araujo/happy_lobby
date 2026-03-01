@@ -1,7 +1,7 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = true # Set to false to disable Steam integration and use local LAN play instead
+const USING_STEAM: bool = false # Set to false to disable Steam integration and use local LAN play instead
 const STEAM_VIRTUAL_PORT: int = 0
 
 signal lobby_joined
@@ -72,6 +72,7 @@ func create_local_lobby() -> void:
 			"steam_id": steam_id,
 			"character": character
 		})
+	game_world.spawn_test_npcs()
 
 func leave_lobby() -> void:
 	if NetworkManager.using_steam and NetworkManager.lobby.lobby_id != 0:
@@ -122,6 +123,7 @@ func _on_peer_connected(id: int) -> void:
 		})
 		# Sync all existing players to the newly connected client
 		game_world.sync_existing_players()
+		game_world.sync_existing_test_npcs_to_peer(id)
 		game_world.call_deferred("sync_customizations_to_peer", id)
 	else:
 		var username := "Player_%d" % id
@@ -190,6 +192,7 @@ func create_steam_host(lobby_id: int) -> void:
 			"steam_id": steam_id,
 			"character": character
 		})
+	game_world.spawn_test_npcs()
 
 func join_steam_lobby(lobby_id: int) -> bool:
 	var steam_peer := _create_steam_peer()
