@@ -20,14 +20,15 @@
 [ext_resource type="Script" uid="uid://c2pxmdnqi5xhr" path="res://avatar/scripts/avatar_state_sync.gd" id="20_w4c3n"]
 [ext_resource type="Script" uid="uid://befkpl4atq0v8" path="res://avatar/scripts/avatar_healthbar.gd" id="21_v6bhq"]
 [ext_resource type="Script" uid="uid://bo3s6y1y07udf" path="res://avatar/scripts/avatar_melee_controller.gd" id="22_f7k2s"]
-[ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://avatar/scripts/avatar_inventory.gd" id="23_inventory"]
+[ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://inventory/scripts/inventory.gd" id="23_inventory"]
 [ext_resource type="Script" uid="uid://iudrkxv08die" path="res://avatar/scripts/avatar_inventory_debug_ui.gd" id="24_inventory_ui"]
 [ext_resource type="Script" uid="uid://brb74kn2omdqh" path="res://avatar/scripts/avatar_vfx.gd" id="25_avatar_vfx"]
 [ext_resource type="AudioStream" uid="uid://be3f17g7nw05w" path="res://assets/vfx_samples/audio/hit.wav" id="26_vfx_hit_audio"]
 [ext_resource type="AudioStream" uid="uid://bbghnkque8hvl" path="res://assets/vfx_samples/audio/explode.wav" id="27_vfx_explode_audio"]
 [ext_resource type="AudioStream" uid="uid://bctwo7cwwc1dk" path="res://assets/vfx_samples/audio/sound_hit.wav" id="28_vfx_sound_hit_audio"]
 [ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
-[ext_resource type="Script" path="res://avatar/scripts/avatar_gun_controller.gd" id="30_gun_controller"]
+[ext_resource type="Script" uid="uid://4tbj0g1uf5r4" path="res://avatar/scripts/avatar_gun_controller.gd" id="30_gun_controller"]
+[ext_resource type="Script" uid="uid://b5vjokkuhaa2o" path="res://avatar/scripts/avatar_crosshair_ui.gd" id="31_crosshair_ui"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -222,10 +223,14 @@ script = ExtResource("8_66k0b")
 [node name="MeleeController" type="Node" parent="." index="6" unique_id=900169493]
 script = ExtResource("22_f7k2s")
 
-[node name="GunController" type="Node" parent="." index="7"]
+[node name="GunController" type="Node" parent="." index="7" unique_id=1732082606]
 script = ExtResource("30_gun_controller")
+beretta_local_rotation_degrees = Vector3(0, 0, 0)
+beretta_local_scale = Vector3(5, 5, 5)
+hand_override_forward_distance = 2.0
+hand_override_right_offset = 0.4
 
-[node name="WeaponAimTarget" type="Node3D" parent="." index="8"]
+[node name="WeaponAimTarget" type="Node3D" parent="." index="8" unique_id=387741722]
 
 [node name="AvatarVfx" type="Node3D" parent="." index="9" unique_id=1387627368]
 script = ExtResource("25_avatar_vfx")
@@ -259,5 +264,8 @@ script = ExtResource("23_inventory")
 [node name="InventoryDebugUI" type="CanvasLayer" parent="." index="12" unique_id=792165495]
 script = ExtResource("24_inventory_ui")
 
-[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="13" unique_id=2020533423]
+[node name="CrosshairUI" type="CanvasLayer" parent="." index="13" unique_id=364019439]
+script = ExtResource("31_crosshair_ui")
+
+[node name="StateSync" type="MultiplayerSynchronizer" parent="." index="14" unique_id=2020533423]
 script = ExtResource("20_w4c3n")

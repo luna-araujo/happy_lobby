@@ -6,17 +6,22 @@ extends CanvasLayer
 @export var sample_item_id: String = "test_item"
 @export var sample_item_quantity: int = 1
 @export var money_delta_amount: int = 10
+@export var beretta_item_id: String = "items.beretta"
+@export var beretta_buy_price: int = 50
 
-var inventory: AvatarInventory
+var inventory: Inventory
+var avatar: Avatar
 var _panel_root: PanelContainer
 var _money_label: Label
 var _slots_label: RichTextLabel
+var _status_label: Label
 var _is_active_for_local_player: bool = false
 
 
 func _ready() -> void:
 	layer = 120
-	inventory = get_node_or_null(inventory_path) as AvatarInventory
+	avatar = get_parent() as Avatar
+	inventory = get_node_or_null(inventory_path) as Inventory
 	_build_ui()
 	if inventory != null:
 		if not inventory.inventory_changed.is_connected(_refresh_view):
@@ -67,6 +72,11 @@ func _build_ui() -> void:
 	_money_label.text = "Money: 0"
 	root_vbox.add_child(_money_label)
 
+	_status_label = Label.new()
+	_status_label.text = "Status: idle"
+	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root_vbox.add_child(_status_label)
+
 	_slots_label = RichTextLabel.new()
 	_slots_label.fit_content = true
 	_slots_label.scroll_active = false
@@ -98,6 +108,31 @@ func _build_ui() -> void:
 	remove_money_button.text = "-Money"
 	remove_money_button.pressed.connect(_on_remove_money_pressed)
 	buttons_grid.add_child(remove_money_button)
+
+	var grant_beretta_button: Button = Button.new()
+	grant_beretta_button.text = "Grant Beretta"
+	grant_beretta_button.pressed.connect(_on_grant_beretta_pressed)
+	buttons_grid.add_child(grant_beretta_button)
+
+	var buy_beretta_button: Button = Button.new()
+	buy_beretta_button.text = "Buy Beretta"
+	buy_beretta_button.pressed.connect(_on_buy_beretta_pressed)
+	buttons_grid.add_child(buy_beretta_button)
+
+	var equip_beretta_button: Button = Button.new()
+	equip_beretta_button.text = "Equip Beretta"
+	equip_beretta_button.pressed.connect(_on_equip_beretta_pressed)
+	buttons_grid.add_child(equip_beretta_button)
+
+	var unequip_weapon_button: Button = Button.new()
+	unequip_weapon_button.text = "Unequip Weapon"
+	unequip_weapon_button.pressed.connect(_on_unequip_weapon_pressed)
+	buttons_grid.add_child(unequip_weapon_button)
+
+	var drop_beretta_button: Button = Button.new()
+	drop_beretta_button.text = "Drop Beretta"
+	drop_beretta_button.pressed.connect(_on_drop_beretta_pressed)
+	buttons_grid.add_child(drop_beretta_button)
 
 
 func _refresh_view() -> void:
@@ -132,29 +167,115 @@ func _on_money_changed(_new_money: int) -> void:
 
 func _on_add_item_pressed() -> void:
 	if inventory == null:
+		_set_status("Inventory unavailable.")
+		return
+	if not _can_mutate_inventory():
+		_set_status("Inventory authority denied.")
 		return
 	inventory.add_item(sample_item_id, sample_item_quantity, {"source": "debug_ui"})
+	_set_status("Added %s x%d." % [sample_item_id, sample_item_quantity])
 	_refresh_view()
 
 
 func _on_remove_item_pressed() -> void:
 	if inventory == null:
+		_set_status("Inventory unavailable.")
 		return
-	inventory.remove_item(sample_item_id, sample_item_quantity)
+	if not _can_mutate_inventory():
+		_set_status("Inventory authority denied.")
+		return
+	var removed: int = inventory.remove_item(sample_item_id, sample_item_quantity)
+	_set_status("Removed %s x%d." % [sample_item_id, removed])
 	_refresh_view()
 
 
 func _on_add_money_pressed() -> void:
 	if inventory == null:
+		_set_status("Inventory unavailable.")
 		return
-	inventory.add_money(money_delta_amount)
+	if not _can_mutate_inventory():
+		_set_status("Inventory authority denied.")
+		return
+	var changed: bool = inventory.add_money(money_delta_amount)
+	if changed:
+		_set_status("Added %d money." % money_delta_amount)
+	else:
+		_set_status("Money unchanged.")
 	_refresh_view()
 
 
 func _on_remove_money_pressed() -> void:
 	if inventory == null:
+		_set_status("Inventory unavailable.")
 		return
-	inventory.spend_money(money_delta_amount)
+	if not _can_mutate_inventory():
+		_set_status("Inventory authority denied.")
+		return
+	var spent: bool = inventory.spend_money(money_delta_amount)
+	if spent:
+		_set_status("Spent %d money." % money_delta_amount)
+	else:
+		_set_status("Not enough money.")
+	_refresh_view()
+
+
+func _on_grant_beretta_pressed() -> void:
+	if inventory == null:
+		_set_status("Inventory unavailable.")
+		return
+	if not _can_mutate_inventory():
+		_set_status("Inventory authority denied.")
+		return
+	var granted: bool = inventory.try_grant_item(beretta_item_id, 1, {"source": "debug_ui"})
+	if granted:
+		_set_status("Granted Beretta.")
+	else:
+		_set_status("Failed to grant Beretta (inventory full?).")
+	_refresh_view()
+
+
+func _on_buy_beretta_pressed() -> void:
+	if avatar == null:
+		_set_status("Avatar unavailable.")
+		return
+	var bought: bool = avatar.try_buy_beretta(beretta_buy_price)
+	if bought:
+		_set_status("Bought Beretta for %d." % beretta_buy_price)
+	else:
+		_set_status("Buy failed (money/space/authority).")
+	_refresh_view()
+
+
+func _on_equip_beretta_pressed() -> void:
+	if avatar == null:
+		_set_status("Avatar unavailable.")
+		return
+	var equipped: bool = avatar.equip_beretta()
+	if equipped:
+		_set_status("Beretta equipped.")
+	else:
+		_set_status("Equip failed (missing item?).")
+	_refresh_view()
+
+
+func _on_unequip_weapon_pressed() -> void:
+	if avatar == null:
+		_set_status("Avatar unavailable.")
+		return
+	avatar.unequip_weapon()
+	_set_status("Weapon unequipped.")
+	_refresh_view()
+
+
+func _on_drop_beretta_pressed() -> void:
+	if avatar == null:
+		_set_status("Avatar unavailable.")
+		return
+	var dropped: bool = avatar.try_drop_beretta()
+	if dropped:
+		_set_status("Dropped Beretta.")
+	else:
+		_set_status("Drop failed (not in inventory?).")
 	_refresh_view()
 
 
@@ -173,7 +294,20 @@ func _set_panel_visible(is_visible: bool) -> void:
 func _can_toggle() -> bool:
 	if _is_active_for_local_player:
 		return true
-	var avatar: Avatar = get_parent() as Avatar
 	if avatar == null:
 		return false
 	return avatar._is_local_controlled()
+
+
+func _can_mutate_inventory() -> bool:
+	if avatar == null:
+		return false
+	if avatar.multiplayer.is_server():
+		return true
+	return avatar._is_local_controlled()
+
+
+func _set_status(message: String) -> void:
+	if _status_label == null:
+		return
+	_status_label.text = "Status: %s" % message

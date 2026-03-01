@@ -1,4 +1,4 @@
-class_name AvatarInventory
+class_name Inventory
 extends Node
 
 signal inventory_changed
@@ -11,11 +11,9 @@ signal slot_changed(slot_index: int)
 var money: int = 0
 var _slots: Array[Dictionary] = []
 var _suppress_signals: bool = false
-var _avatar: Avatar
 
 
 func _ready() -> void:
-	_avatar = get_parent() as Avatar
 	_initialize_slots()
 
 
@@ -457,11 +455,7 @@ func _is_valid_slot_index(slot_index: int) -> bool:
 
 
 func _can_mutate() -> bool:
-	if _avatar == null:
-		return true
-	if _avatar.multiplayer.is_server():
-		return true
-	return _avatar._is_local_controlled()
+	return true
 
 
 func _emit_slot_changed(slot_index: int) -> void:

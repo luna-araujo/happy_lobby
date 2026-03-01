@@ -28,6 +28,7 @@ func _build_replication_config() -> SceneReplicationConfig:
 	_add_property(config, NodePath(":network_inventory_money"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_gun_equipped_item_id"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_gun_is_aiming"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	_add_property(config, NodePath(":network_gun_aim_target_position"), SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
 
 	return config
 

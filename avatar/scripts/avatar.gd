@@ -34,7 +34,7 @@ var parry_fx: Node3D
 var health_bar: AvatarHealthBar
 var melee_controller: AvatarMeleeController
 var gun_controller: AvatarGunController
-var inventory: AvatarInventory
+var inventory: Inventory
 var inventory_debug_ui: AvatarInventoryDebugUi
 var _hit_flash_tween: Tween
 var _hit_flash_peak: float = 1.0
@@ -44,6 +44,7 @@ var _hit_flash_out_duration: float = 0.18
 @export var heavy_melee_hold_threshold: float = 0.25
 @export var parry_counter_stun_duration: float = 1.5
 @export var show_combat_debug: bool = true
+@export var auto_equip_test_beretta: bool = true
 
 const ATTACK_TYPE_QUICK: int = 0
 const ATTACK_TYPE_HEAVY: int = 1
@@ -189,6 +190,19 @@ var network_gun_is_aiming: bool:
 		if gun_controller != null:
 			gun_controller.apply_network_aiming(value)
 
+var _network_gun_aim_target_position: Vector3 = Vector3.ZERO
+var network_gun_aim_target_position: Vector3:
+	get:
+		return _network_gun_aim_target_position
+	set(value):
+		if _network_gun_aim_target_position.is_equal_approx(value):
+			return
+		_network_gun_aim_target_position = value
+		if _is_local_controlled():
+			return
+		if gun_controller != null:
+			gun_controller.apply_network_aim_target(value)
+
 var display_name: String:
 	get:
 		return char_name
@@ -225,7 +239,7 @@ func _ready() -> void:
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
 	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
 	gun_controller = get_node_or_null("GunController") as AvatarGunController
-	inventory = get_node_or_null("Inventory") as AvatarInventory
+	inventory = get_node_or_null("Inventory") as Inventory
 	inventory_debug_ui = get_node_or_null("InventoryDebugUI") as AvatarInventoryDebugUi
 	parry_fx = get_node_or_null(parry_fx_path) as Node3D
 	if not parry_fx:
@@ -268,6 +282,8 @@ func _ready() -> void:
 	if not inventory_debug_ui:
 		printerr("InventoryDebugUI node is missing from Avatar scene.")
 
+	_auto_grant_and_equip_test_beretta()
+
 	_setup_debug_overlay()
 	if combat:
 		network_combat_state = combat.state
@@ -283,6 +299,7 @@ func _ready() -> void:
 	if gun_controller != null:
 		network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
 		network_gun_is_aiming = gun_controller.is_aiming()
+		network_gun_aim_target_position = gun_controller.get_aim_target_position()
 	_apply_network_inventory_state()
 	refresh_authority_state()
 
@@ -308,6 +325,21 @@ func _apply_player_authority() -> void:
 
 func _on_customization_changed() -> void:
 	customized.emit()
+
+
+func _auto_grant_and_equip_test_beretta() -> void:
+	if not auto_equip_test_beretta:
+		return
+	if inventory == null:
+		return
+	if gun_controller == null:
+		return
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		return
+	var beretta_item_id: String = String(AvatarGunController.ITEM_ID_BERETTA)
+	if not inventory.has_item(beretta_item_id, 1):
+		inventory.try_grant_item(beretta_item_id, 1, {"source": "auto_test_loadout"})
+	gun_controller.equip_item(AvatarGunController.ITEM_ID_BERETTA)
 
 
 func refresh_authority_state() -> void:
@@ -338,10 +370,11 @@ func _process(_delta: float) -> void:
 			speed_for_vfx = network_move_speed
 		if gun_controller != null:
 			gun_controller.set_aiming(Input.is_action_pressed("aim"))
-			if Input.is_action_pressed("shoot"):
+			if Input.is_action_just_pressed("shoot"):
 				gun_controller.request_fire_once()
 			network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
 			network_gun_is_aiming = gun_controller.is_aiming()
+			network_gun_aim_target_position = gun_controller.get_aim_target_position()
 		network_display_name = char_name
 	else:
 		speed_for_vfx = _network_move_speed

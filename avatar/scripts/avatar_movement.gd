@@ -17,9 +17,12 @@ signal movement_updated(horizontal_speed: float)
 @export var turn_speed: float = 18.0
 @export var facing_offset_degrees: float = 0.0
 @export var combat_path: NodePath = NodePath("../CharacterCombat")
+@export var gun_controller_path: NodePath = NodePath("../GunController")
 @export var heavy_melee_impulse_strength: float = 10.0
+@export var aim_move_speed_multiplier: float = 0.8
 
 var combat: CharacterCombat
+var gun_controller: AvatarGunController
 
 
 func get_horizontal_speed() -> float:
@@ -36,6 +39,7 @@ func _get_jump_velocity() -> float:
 
 func _ready() -> void:
 	combat = get_node_or_null(combat_path) as CharacterCombat
+	gun_controller = get_node_or_null(gun_controller_path) as AvatarGunController
 
 
 func _is_movement_locked_by_combat() -> bool:
@@ -111,7 +115,13 @@ func _physics_process(delta: float) -> void:
 	cam_right = cam_right.normalized()
 
 	var move_direction := (cam_right * input_dir.x + cam_forward * -input_dir.y).normalized()
-	var target_velocity := move_direction * move_speed
+	var target_speed: float = move_speed
+	var aiming_with_gun: bool = false
+	if gun_controller != null:
+		aiming_with_gun = gun_controller.is_gun_equipped() and gun_controller.is_aiming()
+	if aiming_with_gun:
+		target_speed *= clampf(aim_move_speed_multiplier, 0.0, 1.0)
+	var target_velocity := move_direction * target_speed
 	var has_input := input_dir.length() > 0.0
 	if _is_quick_melee_active() and is_on_floor():
 		# Light melee keeps momentum better than hard-locked combat states.
@@ -136,12 +146,15 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, target_velocity.z, air_accel * delta)
 
 	# Character faces movement direction.
-	var facing_offset_radians := deg_to_rad(facing_offset_degrees)
-	if _is_melee_active() and cam_forward.length_squared() > 0.0:
-		var melee_target_yaw := atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
+	var facing_offset_radians: float = deg_to_rad(facing_offset_degrees)
+	if aiming_with_gun and cam_forward.length_squared() > 0.0:
+		var aim_target_yaw: float = atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
+		rotation.y = lerp_angle(rotation.y, aim_target_yaw, turn_speed * delta)
+	elif _is_melee_active() and cam_forward.length_squared() > 0.0:
+		var melee_target_yaw: float = atan2(-cam_forward.x, -cam_forward.z) + facing_offset_radians
 		rotation.y = lerp_angle(rotation.y, melee_target_yaw, turn_speed * delta)
 	elif move_direction.length_squared() > 0.0:
-		var move_yaw := atan2(-move_direction.x, -move_direction.z) + facing_offset_radians
+		var move_yaw: float = atan2(-move_direction.x, -move_direction.z) + facing_offset_radians
 		rotation.y = lerp_angle(rotation.y, move_yaw, turn_speed * delta)
 
 	move_and_slide()
