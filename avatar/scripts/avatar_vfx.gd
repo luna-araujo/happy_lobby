@@ -11,12 +11,6 @@ extends Node3D
 @export var run_loop_volume_db: float = -12.0
 @export var oneshot_volume_db: float = -5.0
 @export var run_loop_pitch_scale: float = 1.0
-@export var heavy_charge_glow_texture: Texture2D
-@export var heavy_charge_glow_color: Color = Color(1.0, 0.72, 0.2, 1.0)
-@export var heavy_charge_glow_size: float = 1.8
-@export var heavy_charge_local_offset: Vector3 = Vector3(0.0, 0.08, 0.06)
-@export var heavy_charge_glow_fade_in_seconds: float = 0.12
-@export var heavy_charge_glow_fade_out_seconds: float = 0.08
 
 @export var run_loop_sfx: AudioStream
 @export var light_melee_whoosh_sfx: AudioStream
@@ -46,11 +40,6 @@ var _center_anchor: Node3D
 var _run_loop_player: AudioStreamPlayer3D
 var _oneshot_players: Array[AudioStreamPlayer3D] = []
 var _oneshot_player_index: int = 0
-var _heavy_charge_glow_sprite: Sprite3D
-var _heavy_charge_glow_tween: Tween
-var _heavy_charge_glow_alpha: float = 0.0
-var _heavy_charge_glow_enabled: bool = false
-var _heavy_charge_glow_anchor: Node3D
 
 
 func _ready() -> void:
@@ -61,16 +50,7 @@ func _ready() -> void:
 	if _center_anchor == null:
 		_center_anchor = get_parent() as Node3D
 	_setup_audio_players()
-	_setup_heavy_charge_glow_sprite()
 	_connect_avatar_signals()
-
-
-func _process(_delta: float) -> void:
-	var should_enable: bool = false
-	if avatar != null and avatar.combat != null:
-		should_enable = avatar.combat.state == CharacterCombat.CombatState.HEAVY_MELEE
-	if should_enable != _heavy_charge_glow_enabled:
-		_set_heavy_charge_glow_enabled(should_enable)
 
 
 func _setup_audio_players() -> void:
@@ -121,37 +101,11 @@ func _connect_avatar_signals() -> void:
 		avatar.revived.connect(_on_revived)
 
 
-func _setup_heavy_charge_glow_sprite() -> void:
-	var glow_parent: Node3D = _left_hand_anchor
-	if glow_parent == null:
-		glow_parent = _center_anchor
-	if glow_parent == null:
-		return
-	_heavy_charge_glow_sprite = Sprite3D.new()
-	_heavy_charge_glow_sprite.name = "HeavyChargeGlowSprite"
-	_heavy_charge_glow_sprite.texture = heavy_charge_glow_texture
-	_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, 0.0)
-	_heavy_charge_glow_sprite.pixel_size = 0.01
-	_heavy_charge_glow_sprite.scale = Vector3.ONE * maxf(heavy_charge_glow_size, 0.01)
-	_heavy_charge_glow_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_heavy_charge_glow_sprite.shaded = false
-	_heavy_charge_glow_sprite.transparent = true
-	_heavy_charge_glow_sprite.double_sided = true
-	_heavy_charge_glow_sprite.no_depth_test = false
-	_heavy_charge_glow_sprite.visible = false
-	_heavy_charge_glow_anchor = Node3D.new()
-	_heavy_charge_glow_anchor.name = "HeavyChargeGlowAnchor"
-	_heavy_charge_glow_anchor.position = heavy_charge_local_offset
-	glow_parent.add_child(_heavy_charge_glow_anchor)
-	_heavy_charge_glow_anchor.add_child(_heavy_charge_glow_sprite)
-
-
 func _on_light_melee_started() -> void:
 	_play_one_shot(light_melee_whoosh_sfx, _anchor_position(_right_hand_anchor))
 
 
 func _on_heavy_melee_started() -> void:
-	_set_heavy_charge_glow_enabled(true)
 	_play_one_shot(heavy_melee_whoosh_sfx, _anchor_position(_left_hand_anchor))
 
 
@@ -203,7 +157,6 @@ func _on_stun_started() -> void:
 	_play_one_shot(stun_sfx, center_position)
 	_spawn_vfx(stun_vfx, center_position)
 	_on_run_stopped()
-	_set_heavy_charge_glow_enabled(false)
 
 
 func _on_stun_ended() -> void:
@@ -219,7 +172,6 @@ func _on_damaged(_amount: int, _current_hp: int) -> void:
 func _on_died() -> void:
 	var center_position: Vector3 = _anchor_position(_center_anchor)
 	_on_run_stopped()
-	_set_heavy_charge_glow_enabled(false)
 	_play_one_shot(death_sfx, center_position)
 	_spawn_vfx(death_vfx, center_position)
 
@@ -314,47 +266,3 @@ func _can_play_audio() -> bool:
 	if avatar == null:
 		return false
 	return avatar._is_local_controlled()
-
-
-func _set_heavy_charge_glow_enabled(is_enabled: bool) -> void:
-	if _heavy_charge_glow_sprite == null:
-		return
-	_heavy_charge_glow_enabled = is_enabled
-	if _heavy_charge_glow_tween != null and _heavy_charge_glow_tween.is_valid():
-		_heavy_charge_glow_tween.kill()
-	var target_alpha: float = 0.0
-	var duration: float = maxf(heavy_charge_glow_fade_out_seconds, 0.01)
-	if is_enabled:
-		_heavy_charge_glow_sprite.visible = true
-		_heavy_charge_glow_sprite.texture = heavy_charge_glow_texture
-		_heavy_charge_glow_sprite.scale = Vector3.ONE * maxf(heavy_charge_glow_size, 0.01)
-		if _heavy_charge_glow_anchor != null:
-			_heavy_charge_glow_anchor.position = heavy_charge_local_offset
-		target_alpha = 1.0
-		duration = maxf(heavy_charge_glow_fade_in_seconds, 0.01)
-		_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, _heavy_charge_glow_alpha)
-	_heavy_charge_glow_tween = create_tween()
-	_heavy_charge_glow_tween.tween_method(_set_heavy_charge_glow_alpha, _heavy_charge_glow_alpha, target_alpha, duration)
-	if not is_enabled:
-		_hide_heavy_charge_glow_after_fade(duration)
-
-
-func _hide_heavy_charge_glow_after_fade(delay_seconds: float) -> void:
-	await get_tree().create_timer(maxf(delay_seconds, 0.01)).timeout
-	if _heavy_charge_glow_sprite == null:
-		return
-	if _heavy_charge_glow_sprite.modulate.a > 0.01:
-		return
-	_heavy_charge_glow_sprite.visible = false
-
-
-func _set_heavy_charge_glow_alpha(alpha_value: float) -> void:
-	_heavy_charge_glow_alpha = clampf(alpha_value, 0.0, 1.0)
-	if _heavy_charge_glow_sprite == null:
-		return
-	_heavy_charge_glow_sprite.modulate = Color(
-		heavy_charge_glow_color.r,
-		heavy_charge_glow_color.g,
-		heavy_charge_glow_color.b,
-		_heavy_charge_glow_alpha
-	)
