@@ -1,35 +1,60 @@
 class_name AvatarMovement
 extends CharacterBody3D
 
+signal movement_updated(horizontal_speed: float)
 
 @export var move_speed: float = 11.0
 @export var acceleration: float = 48.0
 @export var deceleration: float = 56.0
-@export var jump_velocity: float = 5.5
+@export var parry_deceleration: float = 72.0
+@export var air_acceleration: float = 12.0
+@export var jump_height: float = 1.8
+@export var jump_speed_multiplier: float = 1.25
 @export var fall_gravity_multiplier: float = 2.2
-@export var jump_cut_multiplier: float = 0.45
 @export var turn_speed: float = 18.0
+@export var facing_offset_degrees: float = 0.0
+@export var combat_path: NodePath = NodePath("../CharacterCombat")
+
+var combat: CharacterCombat
+
+
+func get_horizontal_speed() -> float:
+	return Vector2(velocity.x, velocity.z).length()
+
+
+func _get_jump_velocity() -> float:
+	var gravity_strength := get_gravity().length()
+	if gravity_strength <= 0.0:
+		gravity_strength = 9.8
+	var jump_gravity: float = gravity_strength * maxf(jump_speed_multiplier, 0.01)
+	return sqrt(2.0 * jump_gravity * maxf(jump_height, 0.0))
+
+
+func _ready() -> void:
+	combat = get_node_or_null(combat_path) as CharacterCombat
+
+
+func _is_parrying() -> bool:
+	return combat != null and combat.state == CharacterCombat.CombatState.PARRYING
 
 
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
+	var is_parrying := _is_parrying()
 
 	# Add the gravity.
 	if not is_on_floor():
-		var gravity_scale := fall_gravity_multiplier if velocity.y <= 0.0 else 1.0
+		var jump_speed_scale: float = maxf(jump_speed_multiplier, 0.01)
+		var gravity_scale := jump_speed_scale * (fall_gravity_multiplier if velocity.y <= 0.0 else 1.0)
 		velocity += get_gravity() * gravity_scale * delta
 
-		# Releasing jump early cuts upward momentum for a snappier hop.
-		if Input.is_action_just_released("move_jump") and velocity.y > 0.0:
-			velocity.y *= jump_cut_multiplier
-
 	# Handle jump.
-	if Input.is_action_just_pressed("move_jump") and is_on_floor():
-		velocity.y = jump_velocity
+	if not is_parrying and Input.is_action_just_pressed("move_jump") and is_on_floor():
+		velocity.y = _get_jump_velocity()
 
 	# Camera-relative movement on the horizon plane.
-	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var input_dir := Vector2.ZERO if is_parrying else Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 	var camera := get_viewport().get_camera_3d()
 	var cam_forward := Vector3.FORWARD
@@ -44,19 +69,26 @@ func _physics_process(delta: float) -> void:
 
 	var move_direction := (cam_right * input_dir.x + cam_forward * -input_dir.y).normalized()
 	var target_velocity := move_direction * move_speed
-	var accel := acceleration if input_dir.length() > 0.0 else deceleration
+	var has_input := input_dir.length() > 0.0
+	if is_parrying and is_on_floor():
+		# While parrying on the ground, block movement input and bleed horizontal momentum.
+		velocity.x = move_toward(velocity.x, 0.0, parry_deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, parry_deceleration * delta)
+	elif is_on_floor():
+		var accel := acceleration if has_input else deceleration
+		velocity.x = move_toward(velocity.x, target_velocity.x, accel * delta)
+		velocity.z = move_toward(velocity.z, target_velocity.z, accel * delta)
+	else:
+		# Keep horizontal momentum in air; only steer when directional input exists.
+		var air_accel := air_acceleration if has_input else 0.0
+		velocity.x = move_toward(velocity.x, target_velocity.x, air_accel * delta)
+		velocity.z = move_toward(velocity.z, target_velocity.z, air_accel * delta)
 
-	velocity.x = move_toward(velocity.x, target_velocity.x, accel * delta)
-	velocity.z = move_toward(velocity.z, target_velocity.z, accel * delta)
-
-	# Character faces camera yaw only.
-	if cam_forward.length_squared() > 0.0:
-		var target_yaw := atan2(-cam_forward.x, -cam_forward.z)
-		rotation.y = lerp_angle(rotation.y, target_yaw, turn_speed * delta)
-
+	# Character faces movement direction.
+	var facing_offset_radians := deg_to_rad(facing_offset_degrees)
 	if move_direction.length_squared() > 0.0:
-		# Optional: slight extra yaw nudge while moving for responsive feel.
-		var move_yaw := atan2(-move_direction.x, -move_direction.z)
-		rotation.y = lerp_angle(rotation.y, move_yaw, turn_speed * 0.35 * delta)
+		var move_yaw := atan2(-move_direction.x, -move_direction.z) + facing_offset_radians
+		rotation.y = lerp_angle(rotation.y, move_yaw, turn_speed * delta)
 
 	move_and_slide()
+	movement_updated.emit(get_horizontal_speed())

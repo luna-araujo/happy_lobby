@@ -16,10 +16,13 @@ var player_id: int:
 			player_input.set_multiplayer_authority(id)
 		call_deferred("refresh_authority_state")
 
-var animation_player: AnimationPlayer
+var animation_player: AvatarAnimations
 var movement_body: CharacterBody3D
 var customization: AvatarCustomization
 var third_person_camera: ThirdPersonCamera
+var combat: CharacterCombat
+var parry_fx: Node3D
+@export var parry_fx_path: NodePath = NodePath("Armature/ParryFX")
 
 var char_name: String = "noName"
 var skin_tone: Color = Color("f2b089")
@@ -40,10 +43,14 @@ var polygons: Array[MeshInstance3D]:
 
 
 func _ready() -> void:
-	animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
+	animation_player = get_node_or_null("AnimationPlayer") as AvatarAnimations
 	movement_body = get_node_or_null("Armature") as CharacterBody3D
 	customization = get_node_or_null("AvatarCustomization") as AvatarCustomization
 	third_person_camera = get_node_or_null("ThirdPersonCamera") as ThirdPersonCamera
+	combat = get_node_or_null("CharacterCombat") as CharacterCombat
+	parry_fx = get_node_or_null(parry_fx_path) as Node3D
+	if not parry_fx:
+		parry_fx = find_child("ParryFX", true, false) as Node3D
 
 	if customization:
 		customization.customized.connect(_on_customization_changed)
@@ -52,6 +59,14 @@ func _ready() -> void:
 
 	if third_person_camera and movement_body:
 		third_person_camera.set_target(movement_body)
+	if not combat:
+		printerr("CharacterCombat node is missing from Avatar scene.")
+	else:
+		if not combat.state_changed.is_connected(_on_combat_state_changed):
+			combat.state_changed.connect(_on_combat_state_changed)
+		_on_combat_state_changed(combat.state, combat.state)
+	if not parry_fx:
+		printerr("ParryFX node is missing from Avatar scene.")
 
 	refresh_authority_state()
 
@@ -75,17 +90,25 @@ func refresh_authority_state() -> void:
 		third_person_camera.make_current()
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if player_id != multiplayer.get_unique_id():
+		return
+	if event.is_echo():
+		return
+	if event.is_action_pressed("parry"):
+		start_parry()
+
+
+func _on_combat_state_changed(_previous_state: int, new_state: int) -> void:
+	if not parry_fx:
+		return
+	parry_fx.visible = new_state == CharacterCombat.CombatState.PARRYING
+
+
 func play_anim_once(anim_name: String) -> void:
 	if not is_instance_valid(animation_player):
 		return
-	if not animation_player.has_animation(anim_name):
-		return
-	animation_player.play(anim_name)
-	await animation_player.animation_finished
-	if animation_player.has_animation("Idle"):
-		animation_player.play("Idle")
-	elif animation_player.has_animation("idle"):
-		animation_player.play("idle")
+	await animation_player.play_once(StringName(anim_name))
 
 
 func set_height(new_height: float) -> void:
@@ -125,6 +148,26 @@ func get_available_color_options() -> Array[String]:
 func change_polygon_texture(polygon_name: String, texture_path: String) -> void:
 	if customization:
 		customization.change_polygon_texture(polygon_name, texture_path)
+
+
+func start_punch() -> bool:
+	return combat.start_punch() if combat else false
+
+
+func start_parry() -> bool:
+	return combat.start_parry() if combat else false
+
+
+func stun(duration: float = -1.0) -> bool:
+	return combat.stun(duration) if combat else false
+
+
+func apply_damage(amount: int) -> int:
+	return combat.apply_damage(amount) if combat else 0
+
+
+func heal(amount: int) -> int:
+	return combat.heal(amount) if combat else 0
 
 
 static func store_save(character: Avatar) -> void:
