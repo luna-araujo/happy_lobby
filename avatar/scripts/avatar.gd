@@ -416,13 +416,23 @@ func request_melee_damage(target_avatar: Avatar, amount: int, attack_type: int, 
 		return
 	if swing_token <= 0:
 		return
+	if not multiplayer.has_multiplayer_peer():
+		return
 
 	if multiplayer.is_server():
 		_server_apply_melee_damage(target_avatar.player_id, amount, attack_type, swing_token)
 		return
 
+	var multiplayer_peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	if multiplayer_peer == null:
+		return
+	if multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
+
 	target_avatar._play_hit_flash()
 	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
 	_rpc_request_melee_damage.rpc_id(host_id, target_avatar.player_id, amount, attack_type, swing_token)
 
 
@@ -660,14 +670,51 @@ func _find_avatar_by_player_id(target_player_id: int) -> Avatar:
 
 
 func _resolve_host_peer_id() -> int:
+	if not multiplayer.has_multiplayer_peer():
+		return -1
+
+	var multiplayer_peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	if multiplayer_peer == null:
+		return -1
+	if multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return -1
+
 	var default_host_id: int = 1
+	var connected_peers: PackedInt32Array = multiplayer.get_peers()
+	if connected_peers.size() <= 0:
+		return -1
+
+	var session_host_id: int = _resolve_session_host_peer_id()
+	if session_host_id > 0 and connected_peers.has(session_host_id):
+		return session_host_id
+
+	if connected_peers.has(default_host_id):
+		return default_host_id
+
+	if connected_peers.size() == 1:
+		return int(connected_peers[0])
+
+	var resolved_host_id: int = int(connected_peers[0])
+	for peer_id_variant in connected_peers:
+		var peer_id: int = int(peer_id_variant)
+		if peer_id < resolved_host_id:
+			resolved_host_id = peer_id
+	return resolved_host_id
+
+
+func _resolve_session_host_peer_id() -> int:
 	var session_manager: Node = get_node_or_null("/root/SessionManager")
 	if session_manager == null:
-		return default_host_id
+		return -1
+
 	var host_value: Variant = session_manager.get("host_peer_id")
-	if typeof(host_value) == TYPE_INT and int(host_value) > 0:
-		return int(host_value)
-	return default_host_id
+	if typeof(host_value) != TYPE_INT:
+		return -1
+
+	var host_id: int = int(host_value)
+	if host_id <= 0:
+		return -1
+	return host_id
 
 
 func _play_hit_flash() -> void:
