@@ -135,7 +135,7 @@ func _setup_heavy_charge_glow_sprite() -> void:
 	_heavy_charge_glow_sprite.shaded = false
 	_heavy_charge_glow_sprite.transparent = true
 	_heavy_charge_glow_sprite.double_sided = true
-	_heavy_charge_glow_sprite.no_depth_test = true
+	_heavy_charge_glow_sprite.no_depth_test = false
 	_heavy_charge_glow_sprite.visible = false
 	glow_parent.add_child(_heavy_charge_glow_sprite)
 
