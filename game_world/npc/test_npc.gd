@@ -16,6 +16,8 @@ const COIN_REWARD_VFX_SCENE: PackedScene = preload("res://game_world/effects/coi
 @export var respawn_delay_seconds: float = 2.0
 @export var gravity_scale: float = 1.0
 @export var kill_reward_money: int = 5
+@export var duck_base_color: Color = Color(0.95, 0.84, 0.28, 1.0)
+@export var duck_hit_flash_color: Color = Color(1.0, 0.2, 0.2, 1.0)
 
 var combat: CharacterCombat
 var health_bar: AvatarHealthBar
@@ -237,7 +239,7 @@ func _setup_duck_hit_shader() -> void:
 
 		var duck_material: ShaderMaterial = ShaderMaterial.new()
 		duck_material.shader = DUCK_HIT_SHADER
-		duck_material.set_shader_parameter("base_color", Color(0.95, 0.84, 0.28, 1.0))
+		duck_material.set_shader_parameter("base_color", duck_base_color)
 		duck_material.set_shader_parameter("shadow_strength", 0.45)
 		duck_material.set_shader_parameter("mid_strength", 0.15)
 		duck_material.set_shader_parameter("light_strength", 0.25)
@@ -262,9 +264,11 @@ func _play_hit_flash() -> void:
 
 func _set_hit_glow(value: float) -> void:
 	var clamped: float = clampf(value, 0.0, 1.0)
+	var hit_tint: Color = duck_base_color.lerp(duck_hit_flash_color, clamped)
 	for shader_material in _duck_hit_materials:
 		if not is_instance_valid(shader_material):
 			continue
+		shader_material.set_shader_parameter("base_color", hit_tint)
 		shader_material.set_shader_parameter("hit_glow", clamped)
 
 
