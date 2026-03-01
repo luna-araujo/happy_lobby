@@ -5,6 +5,8 @@ extends Node3D
 @export var height_offset: float = 6.4
 @export var panel_size: Vector2i = Vector2i(320, 96)
 @export var world_width: float = 3.2
+@export var status_panel_height: int = 24
+@export var status_vertical_offset: float = 0.0
 @export var normal_hp_color: Color = Color(0.2, 0.85, 0.2)
 @export var low_hp_color: Color = Color(0.95, 0.25, 0.25)
 @export var stunned_hp_color: Color = Color(0.98, 0.68, 0.18)
@@ -103,15 +105,16 @@ func _build_ui() -> void:
 	_status_list.name = "StatusList"
 	_status_list.z_index = 10
 	_status_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_status_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_status_list.position = Vector2(0.0, -42.0)
-	_status_list.custom_minimum_size = Vector2(float(panel_size.x), 0.0)
+	_status_list.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_status_list.offset_top = status_vertical_offset
+	_status_list.offset_bottom = status_vertical_offset + float(status_panel_height)
 	_status_list.add_theme_constant_override("separation", 2)
 	root.add_child(_status_list)
 
 	var bg: ColorRect = ColorRect.new()
 	bg.name = "Background"
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.offset_top = float(status_panel_height)
 	bg.color = Color(0.02, 0.02, 0.02, 0.7)
 	root.add_child(bg)
 
@@ -119,7 +122,7 @@ func _build_ui() -> void:
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_top", status_panel_height + 8)
 	margin.add_theme_constant_override("margin_bottom", 8)
 	root.add_child(margin)
 
