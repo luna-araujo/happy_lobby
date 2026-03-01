@@ -27,7 +27,7 @@
 [ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/explode.wav" id="27_vfx_explode_audio"]
 [ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/sound_hit.wav" id="28_vfx_sound_hit_audio"]
 [ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
-[ext_resource type="Texture2D" path="res://assets/vfx_samples/textures/fire_particle.png" id="30_heavy_glow_tex"]
+[ext_resource type="Texture2D" path="res://assets/vfx_samples/textures/smoke_particle.png" id="30_heavy_glow_tex"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352

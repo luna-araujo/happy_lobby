@@ -13,7 +13,7 @@ extends Node3D
 @export var run_loop_pitch_scale: float = 1.0
 @export var heavy_charge_glow_texture: Texture2D
 @export var heavy_charge_glow_color: Color = Color(1.0, 0.72, 0.2, 1.0)
-@export var heavy_charge_glow_size: float = 0.95
+@export var heavy_charge_glow_size: float = 1.8
 @export var heavy_charge_glow_fade_in_seconds: float = 0.12
 @export var heavy_charge_glow_fade_out_seconds: float = 0.08
 
@@ -47,6 +47,7 @@ var _oneshot_players: Array[AudioStreamPlayer3D] = []
 var _oneshot_player_index: int = 0
 var _heavy_charge_glow_sprite: Sprite3D
 var _heavy_charge_glow_tween: Tween
+var _heavy_charge_glow_alpha: float = 0.0
 
 
 func _ready() -> void:
@@ -130,8 +131,12 @@ func _setup_heavy_charge_glow_sprite() -> void:
 	_heavy_charge_glow_sprite.name = "HeavyChargeGlowSprite"
 	_heavy_charge_glow_sprite.texture = heavy_charge_glow_texture
 	_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, 0.0)
-	_heavy_charge_glow_sprite.pixel_size = maxf(heavy_charge_glow_size, 0.01) / 100.0
+	_heavy_charge_glow_sprite.pixel_size = 0.01
+	_heavy_charge_glow_sprite.scale = Vector3.ONE * maxf(heavy_charge_glow_size, 0.01)
 	_heavy_charge_glow_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_heavy_charge_glow_sprite.shaded = false
+	_heavy_charge_glow_sprite.transparent = true
+	_heavy_charge_glow_sprite.double_sided = true
 	_heavy_charge_glow_sprite.no_depth_test = true
 	_heavy_charge_glow_sprite.visible = false
 	glow_parent.add_child(_heavy_charge_glow_sprite)
@@ -323,12 +328,12 @@ func _set_heavy_charge_glow_enabled(is_enabled: bool) -> void:
 	if is_enabled:
 		_heavy_charge_glow_sprite.visible = true
 		_heavy_charge_glow_sprite.texture = heavy_charge_glow_texture
-		_heavy_charge_glow_sprite.pixel_size = maxf(heavy_charge_glow_size, 0.01) / 100.0
+		_heavy_charge_glow_sprite.scale = Vector3.ONE * maxf(heavy_charge_glow_size, 0.01)
 		target_alpha = 1.0
 		duration = maxf(heavy_charge_glow_fade_in_seconds, 0.01)
-		_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, _heavy_charge_glow_sprite.modulate.a)
+		_heavy_charge_glow_sprite.modulate = Color(heavy_charge_glow_color.r, heavy_charge_glow_color.g, heavy_charge_glow_color.b, _heavy_charge_glow_alpha)
 	_heavy_charge_glow_tween = create_tween()
-	_heavy_charge_glow_tween.tween_property(_heavy_charge_glow_sprite, "modulate:a", target_alpha, duration)
+	_heavy_charge_glow_tween.tween_method(_set_heavy_charge_glow_alpha, _heavy_charge_glow_alpha, target_alpha, duration)
 	if not is_enabled:
 		_hide_heavy_charge_glow_after_fade(duration)
 
@@ -340,3 +345,15 @@ func _hide_heavy_charge_glow_after_fade(delay_seconds: float) -> void:
 	if _heavy_charge_glow_sprite.modulate.a > 0.01:
 		return
 	_heavy_charge_glow_sprite.visible = false
+
+
+func _set_heavy_charge_glow_alpha(alpha_value: float) -> void:
+	_heavy_charge_glow_alpha = clampf(alpha_value, 0.0, 1.0)
+	if _heavy_charge_glow_sprite == null:
+		return
+	_heavy_charge_glow_sprite.modulate = Color(
+		heavy_charge_glow_color.r,
+		heavy_charge_glow_color.g,
+		heavy_charge_glow_color.b,
+		_heavy_charge_glow_alpha
+	)
