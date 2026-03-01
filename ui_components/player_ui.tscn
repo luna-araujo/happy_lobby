@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui_components/player_ui.gd" id="1_player_ui_script"]
+[ext_resource type="PackedScene" path="res://inventory/inventory_ui.tscn" id="2_inventory_ui_scene"]
+
+[node name="PlayerUI" type="CanvasLayer"]
+script = ExtResource("1_player_ui_script")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 412.0
+offset_bottom = 640.0
+
+[node name="Margin" type="MarginContainer" parent="Root/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/Panel/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PlayerName" type="Label" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+text = "No Player"
+horizontal_alignment = 1
+
+[node name="HpBar" type="ProgressBar" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="HpLabel" type="Label" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+text = "HP: --/--"
+horizontal_alignment = 1
+
+[node name="StatusValue" type="Label" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Status: --"
+horizontal_alignment = 1
+
+[node name="StatusDetails" type="Label" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+text = "No combat data."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="InventoryUi" parent="Root/Panel/Margin/VBox" instance=ExtResource("2_inventory_ui_scene")]
+custom_minimum_size = Vector2(0, 420)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

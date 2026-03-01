@@ -5,16 +5,25 @@ extends AnimationPlayer
 @export var run_animation: StringName = &"run"
 @export var animation_tree_path: NodePath = NodePath("../AnimationTree")
 @export var movement_body_path: NodePath = NodePath("../Armature")
+@export var visual_scale_path: NodePath = NodePath("../Armature/Skeleton3D/Avatar")
 @export var combat_path: NodePath = NodePath("../CharacterCombat")
 @export var run_speed_threshold: float = 0.1
+@export var locomotion_blend_lerp_speed: float = 10.0
 @export var quick_melee_animation: StringName = &"light_melee"
 @export var heavy_melee_animation: StringName = &"heavy_melee"
 @export var heavy_melee_burst_amount: float = 10.0
 @export var parry_animation: StringName = &"parry"
 @export var stunned_animation: StringName = &"stun"
 @export var dead_animation: StringName = &"dead"
+@export var jump_takeoff_squash: float = 0.08
+@export var jump_air_stretch: float = 0.1
+@export var jump_landing_squash: float = 0.14
+@export var jump_landing_squash_duration: float = 0.08
+@export var jump_landing_velocity_threshold: float = 3.0
+@export var jump_scale_lerp_speed: float = 14.0
 
 var movement_body: AvatarMovement
+var visual_scale_node: Node3D
 var combat: CharacterCombat
 var animation_tree: AnimationTree
 var state_machine_playback: AnimationNodeStateMachinePlayback
@@ -26,6 +35,12 @@ var _heavy_melee_burst_used: bool = false
 var _desired_tree_state: StringName = &"Locomotion"
 var _tree_state_initialized: bool = false
 var _network_locomotion_speed: float = -1.0
+var _current_locomotion_blend: float = 0.0
+var _visual_base_scale: Vector3 = Vector3.ONE
+var _jump_target_scale: Vector3 = Vector3.ONE
+var _was_on_floor: bool = true
+var _landing_squash_time_left: float = 0.0
+var _last_vertical_velocity: float = 0.0
 
 const TREE_STATE_LOCOMOTION: StringName = &"Locomotion"
 const TREE_STATE_QUICK_MELEE: StringName = &"QuickMelee"
@@ -63,15 +78,30 @@ func _ready() -> void:
 	else:
 		printerr("AvatarAnimations: CharacterCombat not found at path: %s" % combat_path)
 
+	visual_scale_node = get_node_or_null(visual_scale_path) as Node3D
+	if visual_scale_node is Skeleton3D:
+		var mesh_only_scale_node: Node3D = visual_scale_node.get_node_or_null("Avatar") as Node3D
+		if mesh_only_scale_node != null:
+			visual_scale_node = mesh_only_scale_node
+	if visual_scale_node != null:
+		_visual_base_scale = visual_scale_node.scale
+	else:
+		printerr("AvatarAnimations: visual scale node not found at path: %s" % visual_scale_path)
+	_jump_target_scale = _visual_base_scale
+	if movement_body != null:
+		_was_on_floor = movement_body.is_on_floor()
+		_last_vertical_velocity = movement_body.velocity.y
+
 	_setup_animation_tree()
 	_on_movement_updated(movement_body.get_horizontal_speed() if movement_body else 0.0)
 	_on_combat_state_changed(-1, combat.state if combat else CharacterCombat.CombatState.READY)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_sync_tree_state()
 	_update_locomotion_blend()
 	_complete_pending_melee_if_tree_finished()
+	_update_jump_squash_stretch(delta)
 
 
 func _on_movement_updated(horizontal_speed: float) -> void:
@@ -151,8 +181,11 @@ func _update_locomotion_blend(horizontal_speed: float = -1.0) -> void:
 	if speed < 0.0:
 		speed = 0.0
 	var target_speed := maxf(run_speed_threshold, 0.01)
-	var blend := clampf(speed / target_speed, 0.0, 1.0)
-	animation_tree.set("parameters/%s/blend_position" % String(TREE_STATE_LOCOMOTION), blend)
+	var target_blend: float = clampf(speed / target_speed, 0.0, 1.0)
+	var delta: float = get_process_delta_time()
+	var blend_lerp_weight: float = clampf(maxf(locomotion_blend_lerp_speed, 0.0) * maxf(delta, 0.0), 0.0, 1.0)
+	_current_locomotion_blend = lerpf(_current_locomotion_blend, target_blend, blend_lerp_weight)
+	animation_tree.set("parameters/%s/blend_position" % String(TREE_STATE_LOCOMOTION), _current_locomotion_blend)
 
 
 func _complete_pending_melee_if_tree_finished() -> void:
@@ -308,3 +341,50 @@ func _make_anim_node(preferred_name: StringName, fallback_name: StringName) -> A
 	var anim_node := AnimationNodeAnimation.new()
 	anim_node.animation = _resolve_animation_name(preferred_name, fallback_name)
 	return anim_node
+
+
+func _update_jump_squash_stretch(delta: float) -> void:
+	if visual_scale_node == null or movement_body == null:
+		return
+
+	if combat != null and combat.state == CharacterCombat.CombatState.DEAD:
+		_jump_target_scale = _visual_base_scale
+		_landing_squash_time_left = 0.0
+	else:
+		var on_floor: bool = movement_body.is_on_floor()
+		var vertical_velocity: float = movement_body.velocity.y
+
+		if on_floor:
+			if not _was_on_floor:
+				var impact_speed: float = absf(_last_vertical_velocity)
+				var min_threshold: float = maxf(jump_landing_velocity_threshold, 0.01)
+				var impact_ratio: float = clampf(impact_speed / min_threshold, 0.0, 1.0)
+				var squash_amount: float = jump_landing_squash * (0.35 + impact_ratio * 0.65)
+				_jump_target_scale = _compose_jump_scale(1.0 + squash_amount * 0.5, 1.0 - squash_amount)
+				_landing_squash_time_left = maxf(jump_landing_squash_duration, 0.02)
+			elif _landing_squash_time_left > 0.0:
+				_landing_squash_time_left = maxf(_landing_squash_time_left - maxf(delta, 0.0), 0.0)
+				if _landing_squash_time_left <= 0.0:
+					_jump_target_scale = _visual_base_scale
+			else:
+				_jump_target_scale = _visual_base_scale
+		else:
+			_landing_squash_time_left = 0.0
+			if _was_on_floor and vertical_velocity > 0.0:
+				_jump_target_scale = _compose_jump_scale(1.0 + jump_takeoff_squash * 0.45, 1.0 - jump_takeoff_squash)
+			else:
+				_jump_target_scale = _compose_jump_scale(1.0 - jump_air_stretch * 0.4, 1.0 + jump_air_stretch)
+
+		_was_on_floor = on_floor
+		_last_vertical_velocity = vertical_velocity
+
+	var lerp_weight: float = clampf(maxf(jump_scale_lerp_speed, 0.0) * maxf(delta, 0.0), 0.0, 1.0)
+	visual_scale_node.scale = visual_scale_node.scale.lerp(_jump_target_scale, lerp_weight)
+
+
+func _compose_jump_scale(horizontal_multiplier: float, vertical_multiplier: float) -> Vector3:
+	return Vector3(
+		_visual_base_scale.x * horizontal_multiplier,
+		_visual_base_scale.y * vertical_multiplier,
+		_visual_base_scale.z * horizontal_multiplier
+	)

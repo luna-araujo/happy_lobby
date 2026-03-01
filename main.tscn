@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://ui_components/create_lobby_button.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://ui_components/join_lobby_button.gd" id="3_lquwl"]
 [ext_resource type="PackedScene" uid="uid://da6np2odmdu88" path="res://game_world/NeoWorld.tscn" id="6_7mycd"]
+[ext_resource type="PackedScene" path="res://ui_components/player_ui.tscn" id="7_player_ui"]
 
 [node name="Main" type="Node" unique_id=2063291942]
 
@@ -81,3 +82,5 @@ text = "Create Lobby"
 script = ExtResource("3_1bvp3")
 
 [node name="NeoWorld" parent="." unique_id=462384816 instance=ExtResource("6_7mycd")]
+
+[node name="PlayerUI" parent="." instance=ExtResource("7_player_ui")]

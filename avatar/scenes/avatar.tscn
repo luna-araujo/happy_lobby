@@ -181,9 +181,14 @@ panel_size = Vector2i(320, 120)
 [node name="Armature" parent="." index="12" unique_id=193466125]
 transform = Transform3D(-0.4, 0, -6.039832e-08, 0, 0.4, 0, 6.039832e-08, 0, -0.4, 0, 0, 0)
 script = ExtResource("3_hob7b")
-jump_speed_multiplier = 3.0
-fall_gravity_multiplier = 1.2
+quick_melee_deceleration = 12.0
+heavy_melee_ground_deceleration = 25.0
+jump_height = 2.2
+jump_speed_multiplier = 2.0
+fall_gravity_multiplier = 1.8
 facing_offset_degrees = 180.0
+heavy_melee_impulse_strength = 8.0
+aim_move_speed_multiplier = 0.6
 
 [node name="ParryFX" type="MeshInstance3D" parent="Armature" index="0" unique_id=1830864215]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 3.7100003, 0)
@@ -254,6 +259,9 @@ debug_color = Color(0.9647059, 0.14901961, 0.3137255, 0.41960785)
 [node name="AnimationPlayer" parent="." index="13" unique_id=520659362]
 autoplay = &"idle"
 script = ExtResource("7_acn83")
+jump_takeoff_squash = 0.02
+jump_air_stretch = 0.12
+jump_scale_lerp_speed = 8.0
 
 [node name="AnimationTree" type="AnimationTree" parent="." index="14" unique_id=2048553066]
 tree_root = ExtResource("14_s4lrm")

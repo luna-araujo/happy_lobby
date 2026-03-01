@@ -12,6 +12,7 @@ signal movement_updated(horizontal_speed: float)
 @export var air_acceleration: float = 12.0
 @export var jump_height: float = 1.8
 @export var jump_speed_multiplier: float = 1.25
+@export var coyote_time_seconds: float = 0.1
 @export var fall_gravity_multiplier: float = 2.2
 @export var heavy_melee_air_gravity_multiplier: float = 0.2
 @export var turn_speed: float = 18.0
@@ -23,6 +24,7 @@ signal movement_updated(horizontal_speed: float)
 
 var combat: CharacterCombat
 var gun_controller: AvatarGunController
+var _coyote_time_left: float = 0.0
 
 
 func get_horizontal_speed() -> float:
@@ -40,6 +42,7 @@ func _get_jump_velocity() -> float:
 func _ready() -> void:
 	combat = get_node_or_null(combat_path) as CharacterCombat
 	gun_controller = get_node_or_null(gun_controller_path) as AvatarGunController
+	_coyote_time_left = 0.0
 
 
 func _is_movement_locked_by_combat() -> bool:
@@ -87,9 +90,15 @@ func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
 	var movement_locked := _is_movement_locked_by_combat()
+	var on_floor_now: bool = is_on_floor()
+
+	if on_floor_now:
+		_coyote_time_left = maxf(coyote_time_seconds, 0.0)
+	else:
+		_coyote_time_left = maxf(_coyote_time_left - maxf(delta, 0.0), 0.0)
 
 	# Add the gravity.
-	if not is_on_floor():
+	if not on_floor_now:
 		var jump_speed_scale: float = maxf(jump_speed_multiplier, 0.01)
 		var gravity_scale: float = jump_speed_scale * (fall_gravity_multiplier if velocity.y <= 0.0 else 1.0)
 		if _is_heavy_melee_active():
@@ -97,8 +106,10 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * gravity_scale * delta
 
 	# Handle jump.
-	if not movement_locked and Input.is_action_just_pressed("move_jump") and is_on_floor():
+	var can_use_coyote_jump: bool = on_floor_now or _coyote_time_left > 0.0
+	if not movement_locked and Input.is_action_just_pressed("move_jump") and can_use_coyote_jump:
 		velocity.y = _get_jump_velocity()
+		_coyote_time_left = 0.0
 
 	# Camera-relative movement on the horizon plane.
 	var input_dir := Vector2.ZERO if movement_locked else Input.get_vector("move_left", "move_right", "move_up", "move_down")
