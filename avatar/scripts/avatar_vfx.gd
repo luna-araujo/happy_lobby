@@ -103,12 +103,10 @@ func _connect_avatar_signals() -> void:
 
 func _on_light_melee_started() -> void:
 	_play_one_shot(light_melee_whoosh_sfx, _anchor_position(_right_hand_anchor))
-	_spawn_vfx(light_melee_swing_vfx, _anchor_position(_right_hand_anchor))
 
 
 func _on_heavy_melee_started() -> void:
 	_play_one_shot(heavy_melee_whoosh_sfx, _anchor_position(_left_hand_anchor))
-	_spawn_vfx(heavy_melee_swing_vfx, _anchor_position(_left_hand_anchor))
 
 
 func _on_light_melee_hit(target_damageable_id: int, _damage: int) -> void:
