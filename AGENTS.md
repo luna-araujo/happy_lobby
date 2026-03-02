@@ -7,6 +7,7 @@ This repository is a Godot 4.6 project rooted at `project.godot`, with `main.tsc
 - `char_editor/` and `ui_components/`: character editor scenes and reusable UI button scripts.
 - `avatar/` and `assets/`: avatar logic, shaders/materials, and source art.
 - `addons/`: vendored plugins (`godotsteam`, `plenticons`); avoid editing unless intentionally updating a dependency.
+- `addons/steam_play_button/`: local editor addon that adds a toolbar button to play `main.tscn` with Steam env flags.
 
 ## Build, Test, and Development Commands
 Use the Godot 4.6 editor for daily development.
@@ -16,6 +17,9 @@ Use the Godot 4.6 editor for daily development.
 - `godot4 --path . --export-debug "Linux/X11"` builds a debug export (preset must exist in `export_presets.cfg`).
 
 If `godot4` is not in `PATH`, use the local editor binary configured in `.vscode/settings.json`.
+
+Editor addon note:
+- Enable `Steam Play Button` in `Project > Project Settings > Plugins` to show an extra toolbar play button for Steam launches.
 
 ## Publish Release Builds
 Use the tag-based GitHub release flow to publish new player builds.
