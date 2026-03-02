@@ -6,7 +6,7 @@ extends PanelContainer
 @onready var stats:RichTextLabel = $MarginContainer/VBoxContainer/SteamStats
 
 func _ready() -> void:
-	if SessionManager.USING_STEAM == false:
+	if SessionManager.using_steam == false:
 		steam_name.text = SessionManager.current_user
 		return
 	

@@ -1,12 +1,13 @@
 # Autoload -> SessionManager.gd
 extends Node
 
-const USING_STEAM: bool = false # Set to false to disable Steam integration and use local LAN play instead
+const STEAM_CONFIG_SCRIPT: Script = preload("res://networking/steam_config.gd")
 const STEAM_VIRTUAL_PORT: int = 0
 
 signal lobby_joined
 signal lobby_left
 
+var using_steam: bool = STEAM_CONFIG_SCRIPT.is_enabled()
 var current_user: String = ""
 var steam_id: int = 1
 var player_character: Avatar = null
@@ -19,6 +20,8 @@ var peer: MultiplayerPeer = null
 var is_steam_peer: bool = false
 
 func _ready() -> void:
+	print("Steam mode enabled: %s (%s)" % [using_steam, STEAM_CONFIG_SCRIPT.source_label()])
+
 	game_world = _find_neo_world()
 	if game_world == null:
 		push_error("NeoWorld node not found. SessionManager cannot spawn players.")

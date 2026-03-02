@@ -4,6 +4,7 @@ extends Node
 signal steam_started()
 signal avatar_loaded()
 
+const STEAM_CONFIG_SCRIPT: Script = preload("res://networking/steam_config.gd")
 const APP_ID = 480 #Spacewar
 const LOCAL_USER_ID: String = "user://local_user_id"
 
@@ -28,7 +29,7 @@ var ui_language: String
 var lobby: Lobby = Lobby.new()
 
 func _init() -> void:
-	using_steam = SessionManager.USING_STEAM
+	using_steam = STEAM_CONFIG_SCRIPT.is_enabled()
 
 	add_child(lobby)
 
