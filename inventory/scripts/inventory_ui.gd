@@ -3,6 +3,9 @@ extends Control
 
 signal item_use_requested(slot_index: int, item_data_path: String, quantity: int)
 signal external_drop_requested(source_ui: InventoryUi, from_slot: int, target_ui: InventoryUi, to_slot: int)
+signal gun_slot_drop_requested(from_slot: int)
+signal gun_slot_unequip_requested
+signal item_inspect_requested(item_data_path: String)
 
 @export var columns: int = 4
 @export var slot_size: Vector2 = Vector2(72.0, 72.0)
@@ -14,17 +17,25 @@ signal external_drop_requested(source_ui: InventoryUi, from_slot: int, target_ui
 @export var container_name: String = ""
 @export var allow_drag_out: bool = true
 @export var allow_drop_in: bool = true
+@export var show_gun_slot: bool = true
+@export var gun_slot_interactive: bool = true
 
-@onready var _title_label: Label = $Panel/Margin/VBox/TitleLabel
-@onready var _slots_grid: GridContainer = $Panel/Margin/VBox/SlotsGrid
-@onready var _context_menu: PopupMenu = $ContextMenu
+@onready var _title_label: Label = %TitleLabel
+@onready var _money_label: Label = %MoneyLabel
+@onready var _gun_section: VBoxContainer = %GunSection
+@onready var _gun_slot_container: HBoxContainer = %GunSlotContainer
+@onready var _slots_grid: GridContainer = %SlotsGrid
+@onready var _context_menu: PopupMenu = %ContextMenu
 
 var _inventory: Inventory
+var _avatar_inventory: Inventory
 var _item_data_cache: Dictionary = {}
 var _context_slot_index: int = -1
 
 const CONTEXT_USE: int = 0
 const CONTEXT_DROP: int = 1
+const CONTEXT_EQUIP: int = 2
+const CONTEXT_INSPECT: int = 3
 
 
 func _ready() -> void:
@@ -45,6 +56,9 @@ func set_inventory_source(source_inventory: Inventory) -> void:
 		return
 	_disconnect_inventory_signals()
 	_inventory = source_inventory
+	_avatar_inventory = null
+	if source_inventory != null and source_inventory.has_method("get_gun_slot"):
+		_avatar_inventory = source_inventory
 	_connect_inventory_signals()
 	refresh_view()
 
@@ -66,11 +80,23 @@ func set_drag_permissions(can_drag_out: bool, can_drop_in: bool) -> void:
 	allow_drop_in = can_drop_in
 
 
+func set_show_gun_slot(show: bool) -> void:
+	show_gun_slot = show
+	_refresh_gun_slot_view()
+
+
+func set_gun_slot_interactive(can_interact: bool) -> void:
+	gun_slot_interactive = can_interact
+	_refresh_gun_slot_view()
+
+
 func refresh_view() -> void:
 	if _slots_grid == null:
 		return
 	_slots_grid.columns = maxi(columns, 1)
 	_clear_slots_grid()
+	_refresh_gun_slot_view()
+	_refresh_money_label()
 
 	if _inventory == null:
 		_create_placeholder_slot("No inventory")
@@ -93,6 +119,9 @@ func _connect_inventory_signals() -> void:
 		_inventory.inventory_changed.connect(_on_inventory_changed)
 	if not _inventory.slot_changed.is_connected(_on_slot_changed):
 		_inventory.slot_changed.connect(_on_slot_changed)
+	if _avatar_inventory != null:
+		if not _avatar_inventory.gun_slot_changed.is_connected(_on_gun_slot_changed):
+			_avatar_inventory.gun_slot_changed.connect(_on_gun_slot_changed)
 	if not _inventory.money_changed.is_connected(_on_money_changed):
 		_inventory.money_changed.connect(_on_money_changed)
 
@@ -104,8 +133,12 @@ func _disconnect_inventory_signals() -> void:
 		_inventory.inventory_changed.disconnect(_on_inventory_changed)
 	if _inventory.slot_changed.is_connected(_on_slot_changed):
 		_inventory.slot_changed.disconnect(_on_slot_changed)
+	if _avatar_inventory != null:
+		if _avatar_inventory.gun_slot_changed.is_connected(_on_gun_slot_changed):
+			_avatar_inventory.gun_slot_changed.disconnect(_on_gun_slot_changed)
 	if _inventory.money_changed.is_connected(_on_money_changed):
 		_inventory.money_changed.disconnect(_on_money_changed)
+	_avatar_inventory = null
 
 
 func _on_inventory_changed() -> void:
@@ -116,13 +149,51 @@ func _on_slot_changed(_slot_index: int) -> void:
 	refresh_view()
 
 
+func _on_gun_slot_changed() -> void:
+	_refresh_gun_slot_view()
+
+
 func _on_money_changed(_new_money: int) -> void:
-	refresh_view()
+	_refresh_money_label()
 
 
 func _clear_slots_grid() -> void:
 	for child in _slots_grid.get_children():
 		child.queue_free()
+
+
+func _refresh_gun_slot_view() -> void:
+	if _gun_section == null or _gun_slot_container == null:
+		return
+	for child in _gun_slot_container.get_children():
+		child.queue_free()
+
+	var should_show: bool = show_gun_slot and _avatar_inventory != null
+	_gun_section.visible = should_show
+	if not should_show:
+		return
+
+	var gun_slot_data: Dictionary = _avatar_inventory.get_gun_slot()
+	var item_data_path: String = String(gun_slot_data.get("item_data_path", "")).strip_edges()
+	var item_data: Resource = _resolve_item_data(item_data_path)
+	var display_name: String = "Gun"
+	var icon: Texture2D = null
+	if item_data != null:
+		var display_name_variant: Variant = item_data.get("display_name")
+		display_name = String(display_name_variant).strip_edges()
+		if display_name.is_empty():
+			var item_id_variant: Variant = item_data.get("item_id")
+			display_name = String(item_id_variant).strip_edges()
+		var icon_variant: Variant = item_data.get("icon")
+		if icon_variant is Texture2D:
+			icon = icon_variant as Texture2D
+	if display_name.is_empty():
+		display_name = "Gun"
+
+	var gun_slot: InventorySlot = InventorySlot.new()
+	_gun_slot_container.add_child(gun_slot)
+	var gun_slot_size: Vector2 = Vector2(maxf(slot_size.x, 96.0), maxf(slot_size.y, 96.0))
+	gun_slot.configure(self, -1, gun_slot_data, display_name, icon, false, "Drop gun item here", gun_slot_size)
 
 
 func _create_slot(slot_index: int, slot_data: Dictionary) -> void:
@@ -183,8 +254,6 @@ func _resolve_item_data(item_data_path: String) -> Resource:
 
 
 func open_context_menu(slot_index: int) -> void:
-	if is_read_only:
-		return
 	if _context_menu == null:
 		return
 	if _inventory == null:
@@ -192,10 +261,16 @@ func open_context_menu(slot_index: int) -> void:
 	var slot_data: Dictionary = _inventory.get_slot(slot_index)
 	if slot_data.is_empty():
 		return
+	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	var item_data: Resource = _resolve_item_data(item_data_path)
+	var is_gun_item: bool = item_data is GunItemData
 	_context_slot_index = slot_index
 	_context_menu.clear()
-	_context_menu.add_item("Use", CONTEXT_USE)
-	_context_menu.add_item("Drop", CONTEXT_DROP)
+	if not is_read_only and is_gun_item and _avatar_inventory != null and gun_slot_interactive:
+		_context_menu.add_item("Equip", CONTEXT_EQUIP)
+	_context_menu.add_item("Inspect", CONTEXT_INSPECT)
+	if not is_read_only:
+		_context_menu.add_item("Drop", CONTEXT_DROP)
 	var screen_pos: Vector2i = DisplayServer.mouse_get_position()
 	_context_menu.popup(Rect2i(screen_pos, Vector2i(1, 1)))
 
@@ -243,6 +318,22 @@ func can_accept_drop_data(payload: Dictionary, to_slot: int) -> bool:
 	if from_slot < 0:
 		return false
 
+	if to_slot == -1:
+		if not show_gun_slot:
+			return false
+		if not gun_slot_interactive:
+			return false
+		if _avatar_inventory == null:
+			return false
+		if source_ui != self:
+			return false
+		var from_data: Dictionary = _inventory.get_slot(from_slot)
+		if from_data.is_empty():
+			return false
+		var item_data_path: String = String(from_data.get("item_data_path", "")).strip_edges()
+		var item_data: Resource = _resolve_item_data(item_data_path)
+		return item_data is GunItemData
+
 	if source_ui == self:
 		return from_slot != to_slot
 	return true
@@ -258,10 +349,34 @@ func handle_drop_payload(payload: Dictionary, to_slot: int) -> void:
 	if source_ui == null or from_slot < 0:
 		return
 
+	if to_slot == -1:
+		if source_ui != self:
+			return
+		gun_slot_drop_requested.emit(from_slot)
+		return
+
 	if source_ui == self:
 		handle_drop(from_slot, to_slot)
 		return
 	external_drop_requested.emit(source_ui, from_slot, self, to_slot)
+
+
+func handle_special_slot_right_click(slot_index: int) -> void:
+	if slot_index != -1:
+		return
+	if is_read_only:
+		return
+	if not show_gun_slot:
+		return
+	if not gun_slot_interactive:
+		return
+	if _inventory == null:
+		return
+	if _avatar_inventory == null:
+		return
+	if _avatar_inventory.is_gun_slot_empty():
+		return
+	gun_slot_unequip_requested.emit()
 
 
 func _setup_context_menu() -> void:
@@ -272,8 +387,6 @@ func _setup_context_menu() -> void:
 
 
 func _on_context_action_selected(action_id: int) -> void:
-	if is_read_only:
-		return
 	if _inventory == null:
 		return
 	if _context_slot_index < 0:
@@ -285,9 +398,32 @@ func _on_context_action_selected(action_id: int) -> void:
 	var quantity: int = int(slot_data.get("quantity", 0))
 
 	match action_id:
+		CONTEXT_EQUIP:
+			if is_read_only:
+				return
+			var resolved_item_data_path: String = item_data_path.strip_edges()
+			if resolved_item_data_path.is_empty():
+				return
+			var item_data: Resource = _resolve_item_data(resolved_item_data_path)
+			if not (item_data is GunItemData):
+				return
+			if _avatar_inventory == null:
+				return
+			if not gun_slot_interactive:
+				return
+			gun_slot_drop_requested.emit(_context_slot_index)
+		CONTEXT_INSPECT:
+			var resolved_item_data_path: String = item_data_path.strip_edges()
+			if resolved_item_data_path.is_empty():
+				return
+			item_inspect_requested.emit(resolved_item_data_path)
 		CONTEXT_USE:
+			if is_read_only:
+				return
 			item_use_requested.emit(_context_slot_index, item_data_path, quantity)
 		CONTEXT_DROP:
+			if is_read_only:
+				return
 			_inventory.try_drop_item(item_data_path, 1)
 
 
@@ -306,3 +442,12 @@ func _refresh_title() -> void:
 		_title_label.text = "Container"
 	else:
 		_title_label.text = resolved_container
+
+
+func _refresh_money_label() -> void:
+	if _money_label == null:
+		return
+	if _inventory == null:
+		_money_label.text = "Gold: --"
+		return
+	_money_label.text = "Gold: %d" % _inventory.get_money()

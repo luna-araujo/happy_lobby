@@ -12,8 +12,7 @@ extends CanvasLayer
 var inventory: Inventory
 var avatar: Avatar
 var _panel_root: PanelContainer
-var _money_label: Label
-var _slots_label: RichTextLabel
+var _player_state_label: RichTextLabel
 var _status_label: Label
 var _is_active_for_local_player: bool = false
 
@@ -31,6 +30,12 @@ func _ready() -> void:
 	_refresh_view()
 
 
+func _process(_delta: float) -> void:
+	if not _is_panel_visible():
+		return
+	_refresh_player_state_view()
+
+
 func _input(event: InputEvent) -> void:
 	if not _can_toggle():
 		return
@@ -46,10 +51,10 @@ func set_local_player_active(active: bool) -> void:
 
 func _build_ui() -> void:
 	_panel_root = PanelContainer.new()
-	_panel_root.name = "InventoryDebugPanel"
+	_panel_root.name = "CharacterDebugPanel"
 	_panel_root.visible = false
 	_panel_root.position = Vector2(24.0, 24.0)
-	_panel_root.custom_minimum_size = Vector2(340.0, 360.0)
+	_panel_root.custom_minimum_size = Vector2(300.0, 280.0)
 	add_child(_panel_root)
 
 	var margin: MarginContainer = MarginContainer.new()
@@ -64,24 +69,21 @@ func _build_ui() -> void:
 	margin.add_child(root_vbox)
 
 	var title: Label = Label.new()
-	title.text = "Inventory Debug"
+	title.text = "Character Debug"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root_vbox.add_child(title)
-
-	_money_label = Label.new()
-	_money_label.text = "Money: 0"
-	root_vbox.add_child(_money_label)
 
 	_status_label = Label.new()
 	_status_label.text = "Status: idle"
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root_vbox.add_child(_status_label)
 
-	_slots_label = RichTextLabel.new()
-	_slots_label.fit_content = true
-	_slots_label.scroll_active = false
-	_slots_label.custom_minimum_size = Vector2(310.0, 200.0)
-	root_vbox.add_child(_slots_label)
+	_player_state_label = RichTextLabel.new()
+	_player_state_label.fit_content = true
+	_player_state_label.scroll_active = false
+	_player_state_label.custom_minimum_size = Vector2(270.0, 170.0)
+	_player_state_label.text = "Player state: n/a"
+	root_vbox.add_child(_player_state_label)
 
 	var buttons_grid: GridContainer = GridContainer.new()
 	buttons_grid.columns = 2
@@ -137,24 +139,11 @@ func _build_ui() -> void:
 
 func _refresh_view() -> void:
 	if inventory == null:
-		if _money_label != null:
-			_money_label.text = "Money: n/a"
-		if _slots_label != null:
-			_slots_label.text = "Inventory unavailable."
+		if _player_state_label != null:
+			_player_state_label.text = "Player state unavailable."
 		return
 
-	_money_label.text = "Money: %d" % inventory.get_money()
-	var lines: PackedStringArray = []
-	var slots: Array[Dictionary] = inventory.get_slots()
-	for slot_index in range(slots.size()):
-		var slot_data: Dictionary = slots[slot_index]
-		if slot_data.is_empty():
-			lines.append("[%d] <empty>" % slot_index)
-			continue
-		var item_data_path: String = String(slot_data.get("item_data_path", ""))
-		var quantity: int = int(slot_data.get("quantity", 0))
-		lines.append("[%d] %s x%d" % [slot_index, item_data_path, quantity])
-	_slots_label.text = "\n".join(lines)
+	_refresh_player_state_view()
 
 
 func _on_money_changed(_new_money: int) -> void:
@@ -285,6 +274,8 @@ func _set_panel_visible(is_visible: bool) -> void:
 	if _panel_root == null:
 		return
 	_panel_root.visible = is_visible
+	if is_visible:
+		_refresh_view()
 
 
 func _can_toggle() -> bool:
@@ -307,3 +298,69 @@ func _set_status(message: String) -> void:
 	if _status_label == null:
 		return
 	_status_label.text = "Status: %s" % message
+
+
+func _refresh_player_state_view() -> void:
+	if _player_state_label == null:
+		return
+	if avatar == null or not is_instance_valid(avatar):
+		_player_state_label.text = "Player state unavailable."
+		return
+
+	var is_local: bool = avatar._is_local_controlled()
+	var is_server: bool = avatar.multiplayer.is_server()
+	var movement_auth: bool = false
+	if avatar.movement_body != null and is_instance_valid(avatar.movement_body):
+		movement_auth = avatar.movement_body.is_multiplayer_authority()
+
+	var combat_state_name: String = "n/a"
+	var hp_text: String = "n/a"
+	var can_act_text: String = "n/a"
+	var melee_state_text: String = "n/a"
+	var parry_cd_text: String = "n/a"
+	if avatar.combat != null:
+		combat_state_name = _combat_state_name(avatar.combat.state)
+		hp_text = "%d/%d" % [avatar.combat.hp, avatar.combat.max_hp]
+		can_act_text = str(avatar.combat.can_act())
+		melee_state_text = str(avatar.combat.is_melee_state())
+		parry_cd_text = "%.2fs" % avatar.combat.get_parry_cooldown_remaining()
+
+	var equipped_item_id: String = "n/a"
+	var gun_aiming: String = "n/a"
+	var aim_target_text: String = "n/a"
+	if avatar.gun_controller != null:
+		equipped_item_id = avatar.gun_controller.get_equipped_item_id()
+		gun_aiming = str(avatar.gun_controller.is_aiming())
+		aim_target_text = str(avatar.gun_controller.get_aim_target_position())
+
+	_player_state_label.text = "\n".join([
+		"Player State",
+		"PlayerID: %d | Local: %s | Server: %s | MoveAuth: %s" % [avatar.player_id, str(is_local), str(is_server), str(movement_auth)],
+		"Combat: %s | HP: %s | CanAct: %s | MeleeState: %s | ParryCD: %s" % [combat_state_name, hp_text, can_act_text, melee_state_text, parry_cd_text],
+		"Gun: equipped=%s | aiming=%s" % [equipped_item_id, gun_aiming],
+		"AimTarget: %s" % aim_target_text,
+		"Sync: net_state=%s | net_hp=%d/%d | net_money=%d" % [
+			_combat_state_name(avatar.network_combat_state),
+			avatar.network_hp,
+			avatar.network_max_hp,
+			avatar.network_inventory_money
+		],
+		"Sync: slots_json_len=%d" % avatar.network_inventory_slots_json.length()
+	])
+
+
+func _combat_state_name(state_value: int) -> String:
+	match state_value:
+		CharacterCombat.CombatState.READY:
+			return "READY"
+		CharacterCombat.CombatState.QUICK_MELEE:
+			return "QUICK_MELEE"
+		CharacterCombat.CombatState.HEAVY_MELEE:
+			return "HEAVY_MELEE"
+		CharacterCombat.CombatState.PARRYING:
+			return "PARRYING"
+		CharacterCombat.CombatState.STUNNED:
+			return "STUNNED"
+		CharacterCombat.CombatState.DEAD:
+			return "DEAD"
+	return "UNKNOWN(%d)" % state_value

@@ -38,13 +38,15 @@ func configure(
 func _gui_input(event: InputEvent) -> void:
 	if owner_ui == null:
 		return
-	if owner_ui.is_read_only:
-		return
 	if slot_data.is_empty():
 		return
 	if event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+			if slot_index < 0:
+				if owner_ui.has_method("handle_special_slot_right_click"):
+					owner_ui.call("handle_special_slot_right_click", slot_index)
+				return
 			owner_ui.open_context_menu(slot_index)
 
 
@@ -52,6 +54,8 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	if owner_ui == null:
 		return null
 	if owner_ui.is_read_only:
+		return null
+	if slot_index < 0:
 		return null
 	if not owner_ui.allow_drag_out:
 		return null
@@ -149,7 +153,10 @@ func _rebuild_contents() -> void:
 
 	if slot_data.is_empty():
 		var empty_label: Label = Label.new()
-		empty_label.text = "[%d] %s" % [slot_index, empty_slot_text]
+		if slot_index < 0:
+			empty_label.text = empty_slot_text
+		else:
+			empty_label.text = "[%d] %s" % [slot_index, empty_slot_text]
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

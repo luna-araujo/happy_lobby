@@ -125,7 +125,7 @@ func _build_ui() -> void:
 	bg.name = "Background"
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.offset_top = float(status_panel_height)
-	bg.color = Color(0.02, 0.02, 0.02, 0.7)
+	bg.color = Color(0.02, 0.02, 0.02, 0.0)
 	root.add_child(bg)
 
 	var margin: MarginContainer = MarginContainer.new()

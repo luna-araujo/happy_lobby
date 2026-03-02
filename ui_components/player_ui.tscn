@@ -1,10 +1,22 @@
 [gd_scene format=3 uid="uid://dbi6jduedmmsd"]
 
 [ext_resource type="Script" uid="uid://c3nqm1te3nhad" path="res://ui_components/player_ui.gd" id="1_player_ui_script"]
-[ext_resource type="PackedScene" path="res://inventory/inventory_ui.tscn" id="2_inventory_ui_scene"]
+[ext_resource type="PackedScene" uid="uid://bkavmofn8itgd" path="res://inventory/inventory_ui.tscn" id="2_inventory_ui_scene"]
+[ext_resource type="Script" uid="uid://m81riugpmtps" path="res://ui_components/player_ui_inspector.gd" id="3_player_ui_inspector"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kd2um"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ckh35"]
+bg_color = Color(0.8788839, 0, 0.27403352, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kd2um"]
 
 [node name="PlayerUI" type="CanvasLayer" unique_id=2134681793 groups=["player_ui"]]
 script = ExtResource("1_player_ui_script")
+
+[node name="Inspector" type="Node" parent="." unique_id=2000515918]
+script = ExtResource("3_player_ui_inspector")
 
 [node name="Root" type="Control" parent="." unique_id=1848201290]
 layout_mode = 3
@@ -16,13 +28,14 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="BottomLeftHud" type="PanelContainer" parent="Root" unique_id=1259820116]
+self_modulate = Color(1, 1, 1, 0)
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -140.0
+offset_top = -206.0
 offset_right = 336.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -41,53 +54,78 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 6
+alignment = 2
+
+[node name="StatusList" type="VBoxContainer" parent="Root/BottomLeftHud/Margin/VBox" unique_id=1346147492]
+layout_mode = 2
+theme_override_constants/separation = 2
 
 [node name="PlayerName" type="Label" parent="Root/BottomLeftHud/Margin/VBox" unique_id=1163145045]
 layout_mode = 2
 text = "No Player"
 
 [node name="HpBar" type="ProgressBar" parent="Root/BottomLeftHud/Margin/VBox" unique_id=260559224]
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
+theme_override_constants/outline_size = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_kd2um")
+theme_override_styles/fill = SubResource("StyleBoxFlat_ckh35")
 value = 100.0
 show_percentage = false
-
-[node name="StatusList" type="VBoxContainer" parent="Root/BottomLeftHud/Margin/VBox" unique_id=1346147492]
-layout_mode = 2
-theme_override_constants/separation = 2
 
 [node name="InventoryUi" parent="Root" unique_id=269773895 instance=ExtResource("2_inventory_ui_scene")]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
-offset_left = -420.0
-offset_top = -280.0
-offset_right = -16.0
-offset_bottom = -16.0
+offset_left = -427.0
+offset_top = -284.0
+offset_right = -23.0
+offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
 
 [node name="LootInventoryUi" parent="Root" unique_id=182001224 instance=ExtResource("2_inventory_ui_scene")]
-visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
-offset_left = -828.0
-offset_top = -280.0
-offset_right = -424.0
-offset_bottom = -16.0
+offset_left = -427.0
+offset_top = -560.0
+offset_right = -23.0
+offset_bottom = -296.0
 grow_horizontal = 0
 grow_vertical = 0
 
+[node name="LootInventoryCloseButton" type="Button" parent="Root" unique_id=1166665682]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -52.0
+offset_top = -576.0
+offset_right = -8.0
+offset_bottom = -545.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "X"
+
 [node name="InteractionPrompt" type="PanelContainer" parent="Root" unique_id=414090335]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -340.0
-offset_bottom = 44.0
-grow_horizontal = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -13.0
+offset_top = -22.0
+offset_right = 327.0
+offset_bottom = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_kd2um")
 
 [node name="Margin" type="MarginContainer" parent="Root/InteractionPrompt" unique_id=1640830581]
 layout_mode = 2
@@ -100,3 +138,64 @@ theme_override_constants/margin_bottom = 6
 layout_mode = 2
 text = "Press E to interact"
 horizontal_alignment = 1
+
+[node name="ItemInspectPopup" type="PanelContainer" parent="Root" unique_id=1457353059]
+visible = false
+z_index = 100
+custom_minimum_size = Vector2(360, 320)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -160.0
+offset_right = 180.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InspectMargin" type="MarginContainer" parent="Root/ItemInspectPopup" unique_id=2071389861]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="InspectVBox" type="VBoxContainer" parent="Root/ItemInspectPopup/InspectMargin" unique_id=589857655]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ItemTitleLabel" type="Label" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=1843767179]
+layout_mode = 2
+text = "Item"
+horizontal_alignment = 1
+
+[node name="ItemIcon" type="TextureRect" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=1455992885]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ItemRarityLabel" type="Label" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=2060281778]
+layout_mode = 2
+text = "Rarity: Common"
+horizontal_alignment = 1
+
+[node name="ItemDescriptionLabel" type="Label" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=2016677393]
+layout_mode = 2
+text = "No description."
+autowrap_mode = 2
+
+[node name="ItemStatsSection" type="VBoxContainer" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=712765422]
+layout_mode = 2
+
+[node name="ItemStatsLabel" type="Label" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox/ItemStatsSection" unique_id=491374784]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="ItemInspectCloseButton" type="Button" parent="Root/ItemInspectPopup/InspectMargin/InspectVBox" unique_id=2133581920]
+layout_mode = 2
+text = "Close"

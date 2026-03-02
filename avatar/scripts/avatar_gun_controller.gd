@@ -408,11 +408,8 @@ func _update_aim_target_position() -> void:
 	if avatar == null:
 		return
 	if avatar._is_local_controlled():
-		var from_position: Vector3 = _resolve_fire_origin()
-		var direction: Vector3 = _resolve_fire_direction()
-		if direction.length_squared() <= 0.0:
-			return
-		aim_target.global_position = from_position + direction.normalized() * maxf(max_shoot_distance, 1.0)
+		var resolved_aim_point: Vector3 = _resolve_camera_aim_point()
+		aim_target.global_position = resolved_aim_point
 		return
 	aim_target.global_position = _network_aim_target_position
 
@@ -491,3 +488,37 @@ func _resolve_fire_direction() -> Vector3:
 		if hand_forward.length_squared() > 0.0:
 			return hand_forward.normalized()
 	return Vector3.FORWARD
+
+
+func _resolve_camera_aim_point() -> Vector3:
+	var from_position: Vector3 = _resolve_fire_origin()
+	var direction: Vector3 = _resolve_fire_direction()
+	if direction.length_squared() <= 0.0:
+		return from_position
+	direction = direction.normalized()
+
+	var max_distance: float = maxf(max_shoot_distance, 1.0)
+	var to_position: Vector3 = from_position + direction * max_distance
+	if avatar == null:
+		return to_position
+
+	var world_3d: World3D = avatar.get_world_3d()
+	if world_3d == null:
+		return to_position
+
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from_position, to_position)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.hit_from_inside = false
+	var exclude_nodes: Array[RID] = []
+	if movement_body != null:
+		exclude_nodes.append(movement_body.get_rid())
+	query.exclude = exclude_nodes
+	var result: Dictionary = world_3d.direct_space_state.intersect_ray(query)
+	if result.is_empty():
+		return to_position
+
+	var hit_position_value: Variant = result.get("position", to_position)
+	if typeof(hit_position_value) == TYPE_VECTOR3:
+		return hit_position_value as Vector3
+	return to_position

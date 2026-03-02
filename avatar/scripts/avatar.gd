@@ -57,8 +57,15 @@ var _debug_layer: CanvasLayer
 var _debug_label: Label
 var _applying_network_combat_state: bool = false
 var _applying_network_inventory_state: bool = false
+var _pending_owner_inventory_sync: bool = false
+var _owner_inventory_sync_seq: int = 0
+var _owner_inventory_sync_acked_seq: int = 0
+var _owner_inventory_sync_retry_cooldown: float = 0.0
+var _owner_inventory_sync_has_sent_once: bool = false
 var _vfx_is_running: bool = false
 @export var run_vfx_speed_threshold: float = 0.15
+@export var owner_inventory_sync_retry_interval_seconds: float = 0.25
+@export var owner_inventory_sync_initial_delay_seconds: float = 0.35
 
 var _network_animation_state: StringName = &"Locomotion"
 var network_animation_state: StringName:
@@ -301,6 +308,7 @@ func _ready() -> void:
 	if inventory:
 		network_inventory_slots_json = inventory.serialize_slots_json()
 		network_inventory_money = inventory.get_money()
+		_sync_gun_equipped_from_inventory_slot()
 	if gun_controller != null:
 		network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
 		network_gun_is_aiming = gun_controller.is_aiming()
@@ -361,13 +369,10 @@ func _auto_grant_and_equip_test_beretta() -> void:
 		return
 	if inventory == null:
 		return
-	if gun_controller == null:
-		return
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
 		return
 	if not inventory.has_item(AvatarGunController.BERETTA_ITEM_DATA_PATH, 1):
 		inventory.try_grant_item(AvatarGunController.BERETTA_ITEM_DATA_PATH, 1)
-	gun_controller.equip_item(AvatarGunController.ITEM_ID_BERETTA)
 
 
 func refresh_authority_state() -> void:
@@ -389,18 +394,27 @@ func refresh_authority_state() -> void:
 		health_bar.set_hide_for_local_player(local_player)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if multiplayer.is_server():
+		_owner_inventory_sync_retry_cooldown = maxf(_owner_inventory_sync_retry_cooldown - maxf(delta, 0.0), 0.0)
+		_flush_pending_owner_inventory_sync()
 	var is_local := _is_local_controlled()
 	var speed_for_vfx: float = 0.0
 	if is_local:
+		var can_use_mouse_combat: bool = true
+		if UIManager != null:
+			can_use_mouse_combat = UIManager.mouse_locked
 		if is_instance_valid(animation_player):
 			network_animation_state = StringName(animation_player.get_desired_tree_state_name())
 		if is_instance_valid(movement_body):
 			network_move_speed = movement_body.get_horizontal_speed()
 			speed_for_vfx = network_move_speed
 		if gun_controller != null:
-			gun_controller.set_aiming(Input.is_action_pressed("aim"))
-			if Input.is_action_just_pressed("shoot"):
+			if can_use_mouse_combat:
+				gun_controller.set_aiming(Input.is_action_pressed("aim"))
+			else:
+				gun_controller.set_aiming(false)
+			if can_use_mouse_combat and Input.is_action_just_pressed("shoot"):
 				gun_controller.request_fire_once()
 			network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
 			network_gun_is_aiming = gun_controller.is_aiming()
@@ -538,6 +552,7 @@ func _apply_display_name_to_health_bar() -> void:
 func _on_inventory_changed() -> void:
 	if inventory == null:
 		return
+	_sync_gun_equipped_from_inventory_slot()
 	if _applying_network_inventory_state:
 		return
 	if not multiplayer.is_server() and not _is_local_controlled():
@@ -545,7 +560,7 @@ func _on_inventory_changed() -> void:
 	network_inventory_slots_json = inventory.serialize_slots_json()
 	network_inventory_money = inventory.get_money()
 	if multiplayer.is_server():
-		_send_inventory_sync_to_owner(network_inventory_slots_json, network_inventory_money)
+		_queue_owner_inventory_sync()
 
 
 func _on_inventory_money_changed(_new_money: int) -> void:
@@ -562,17 +577,89 @@ func _apply_network_inventory_state() -> void:
 	_applying_network_inventory_state = true
 	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
 	_applying_network_inventory_state = false
+	_sync_gun_equipped_from_inventory_slot()
 
 
-func _send_inventory_sync_to_owner(slots_json: String, money_value: int) -> void:
+func _sync_gun_equipped_from_inventory_slot() -> void:
+	if gun_controller == null:
+		return
+	if inventory == null:
+		gun_controller.unequip_current()
+		return
+	if not inventory.has_method("get_gun_slot"):
+		gun_controller.unequip_current()
+		return
+
+	var gun_slot_variant: Variant = inventory.call("get_gun_slot")
+	if typeof(gun_slot_variant) != TYPE_DICTIONARY:
+		gun_controller.unequip_current()
+		return
+	var gun_slot: Dictionary = gun_slot_variant as Dictionary
+	if gun_slot.is_empty():
+		gun_controller.unequip_current()
+		return
+
+	var item_data_path: String = String(gun_slot.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		gun_controller.unequip_current()
+		return
+	var item_data: Resource = load(item_data_path)
+	if not (item_data is GunItemData):
+		gun_controller.unequip_current()
+		return
+
+	var gun_item_data: GunItemData = item_data as GunItemData
+	var equipped_item_id: StringName = gun_item_data.equipped_item_id
+	if equipped_item_id == &"":
+		equipped_item_id = StringName(gun_item_data.item_id)
+	if equipped_item_id == &"":
+		gun_controller.unequip_current()
+		return
+	gun_controller.equip_item(equipped_item_id)
+
+
+func _queue_owner_inventory_sync() -> void:
+	if not multiplayer.is_server():
+		return
+	_owner_inventory_sync_seq += 1
+	_pending_owner_inventory_sync = true
+	if _owner_inventory_sync_has_sent_once:
+		_owner_inventory_sync_retry_cooldown = 0.0
+	else:
+		_owner_inventory_sync_retry_cooldown = maxf(owner_inventory_sync_initial_delay_seconds, 0.0)
+	_flush_pending_owner_inventory_sync()
+
+
+func _send_inventory_sync_to_owner(slots_json: String, money_value: int, sync_seq: int) -> bool:
 	var local_peer_id: int = _get_local_peer_id_if_connected()
 	if player_id <= 0:
-		return
+		return false
 	if player_id == local_peer_id:
-		return
+		_owner_inventory_sync_acked_seq = maxi(_owner_inventory_sync_acked_seq, sync_seq)
+		_pending_owner_inventory_sync = false
+		return true
 	if not _is_connected_peer(player_id):
+		return false
+	_rpc_sync_inventory.rpc_id(player_id, slots_json, money_value, sync_seq)
+	return true
+
+
+func _flush_pending_owner_inventory_sync() -> void:
+	if not _pending_owner_inventory_sync:
 		return
-	_rpc_sync_inventory.rpc_id(player_id, slots_json, money_value)
+	if _owner_inventory_sync_acked_seq >= _owner_inventory_sync_seq:
+		_pending_owner_inventory_sync = false
+		return
+	if _owner_inventory_sync_retry_cooldown > 0.0:
+		return
+	var sent: bool = _send_inventory_sync_to_owner(
+		network_inventory_slots_json,
+		network_inventory_money,
+		_owner_inventory_sync_seq
+	)
+	if sent:
+		_owner_inventory_sync_has_sent_once = true
+		_owner_inventory_sync_retry_cooldown = maxf(owner_inventory_sync_retry_interval_seconds, 0.05)
 
 
 func play_anim_once(anim_name: String) -> void:
@@ -654,6 +741,66 @@ func request_loot_transfer(npc_id: int, from_slot: int, preferred_to_slot: int =
 	if not interaction_controller.has_method("request_loot_transfer"):
 		return
 	interaction_controller.call("request_loot_transfer", npc_id, from_slot, preferred_to_slot)
+
+
+func request_chest_take(chest_id: int, from_slot: int, preferred_to_slot: int = -1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_chest_take"):
+		return
+	interaction_controller.call("request_chest_take", chest_id, from_slot, preferred_to_slot)
+
+
+func request_chest_store(chest_id: int, from_player_slot: int, preferred_chest_slot: int = -1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_chest_store"):
+		return
+	interaction_controller.call("request_chest_store", chest_id, from_player_slot, preferred_chest_slot)
+
+
+func request_equip_gun_from_slot(from_slot: int, preferred_return_slot: int = -1) -> void:
+	if inventory == null:
+		return
+	if not inventory.has_method("equip_gun_from_slot"):
+		return
+	if from_slot < 0:
+		return
+	if not _is_local_controlled():
+		return
+
+	if multiplayer.is_server():
+		inventory.call("equip_gun_from_slot", from_slot, preferred_return_slot)
+		return
+
+	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
+		return
+	_rpc_request_equip_gun_from_slot.rpc_id(host_id, from_slot, preferred_return_slot)
+
+
+func request_unequip_gun_to_inventory(preferred_slot: int = -1) -> void:
+	if inventory == null:
+		return
+	if not inventory.has_method("unequip_gun_to_inventory"):
+		return
+	if preferred_slot < -1:
+		return
+	if not _is_local_controlled():
+		return
+
+	if multiplayer.is_server():
+		inventory.call("unequip_gun_to_inventory", preferred_slot)
+		return
+
+	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
+		return
+	_rpc_request_unequip_gun_to_inventory.rpc_id(host_id, preferred_slot)
 
 
 func start_quick_melee() -> bool:
@@ -873,6 +1020,42 @@ func _rpc_request_melee_damage(target_damageable_id: int, amount: int, attack_ty
 	_server_apply_melee_damage(target_damageable_id, amount, attack_type, swing_token)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_equip_gun_from_slot(from_slot: int, preferred_return_slot: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if inventory == null:
+		return
+	if not inventory.has_method("equip_gun_from_slot"):
+		return
+	if from_slot < 0:
+		return
+	if preferred_return_slot < -1:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	inventory.call("equip_gun_from_slot", from_slot, preferred_return_slot)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_unequip_gun_to_inventory(preferred_slot: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if inventory == null:
+		return
+	if not inventory.has_method("unequip_gun_to_inventory"):
+		return
+	if preferred_slot < -1:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	inventory.call("unequip_gun_to_inventory", preferred_slot)
+
+
 func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_type: int, swing_token: int) -> void:
 	if not multiplayer.is_server():
 		return
@@ -991,7 +1174,7 @@ func _rpc_sync_health(new_hp: int, new_max_hp: int) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_sync_inventory(slots_json: String, money_value: int) -> void:
+func _rpc_sync_inventory(slots_json: String, money_value: int, sync_seq: int) -> void:
 	if multiplayer.is_server():
 		return
 	var sender_id: int = multiplayer.get_remote_sender_id()
@@ -999,6 +1182,20 @@ func _rpc_sync_inventory(slots_json: String, money_value: int) -> void:
 	if sender_id != host_id:
 		return
 	_apply_synced_inventory(slots_json, money_value)
+	if host_id > 0:
+		_rpc_ack_inventory_sync.rpc_id(host_id, sync_seq)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_ack_inventory_sync(sync_seq: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	_owner_inventory_sync_acked_seq = maxi(_owner_inventory_sync_acked_seq, sync_seq)
+	if _owner_inventory_sync_acked_seq >= _owner_inventory_sync_seq:
+		_pending_owner_inventory_sync = false
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -1040,6 +1237,7 @@ func _apply_synced_inventory(slots_json: String, money_value: int) -> void:
 	_applying_network_inventory_state = true
 	inventory.apply_snapshot_from_network(_network_inventory_slots_json, _network_inventory_money)
 	_applying_network_inventory_state = false
+	_sync_gun_equipped_from_inventory_slot()
 
 
 func _update_run_vfx_state(speed_value: float) -> void:

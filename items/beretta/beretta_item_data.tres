@@ -1,12 +1,34 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="GunItemData" load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1_item_data_script"]
+[ext_resource type="Script" path="res://items/gun_item_data.gd" id="1_gun_item_data_script"]
 [ext_resource type="Texture2D" path="res://assets/items/beretta_icon.png" id="2_beretta_icon"]
+[ext_resource type="PackedScene" path="res://items/beretta/beretta.tscn" id="3_beretta_scene"]
+[ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/sound_hit.wav" id="4_shoot_sfx"]
+[ext_resource type="AudioStream" path="res://assets/vfx_samples/audio/hit.wav" id="5_impact_sfx"]
+[ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="6_hit_vfx"]
 
 [resource]
-script = ExtResource("1_item_data_script")
+script = ExtResource("1_gun_item_data_script")
 item_id = "items.beretta"
 display_name = "Beretta"
+description = "Reliable sidearm with balanced recoil and stopping power."
+rarity = "rare"
 icon = ExtResource("2_beretta_icon")
 max_stack = 1
 tags = PackedStringArray("weapon", "pistol")
+equipped_item_id = &"items.beretta"
+weapon_scene = ExtResource("3_beretta_scene")
+local_position = Vector3(0, 0, 0)
+local_rotation_degrees = Vector3(0, 180, 0)
+local_scale = Vector3(2.5, 2.5, 2.5)
+fire_damage = 6
+fire_rate_per_second = 6.0
+max_shoot_distance = 180.0
+hand_override_forward_distance = 0.75
+hand_override_right_offset = 0.35
+hand_override_vertical_offset = 1.35
+hand_override_look_offset_degrees = Vector3(0, 180, 0)
+gun_shoot_sfx = ExtResource("4_shoot_sfx")
+gun_impact_sfx = ExtResource("5_impact_sfx")
+gun_hit_vfx_scene = ExtResource("6_hit_vfx")
+gun_feedback_volume_db = -6.0

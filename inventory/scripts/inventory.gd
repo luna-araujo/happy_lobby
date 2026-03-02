@@ -387,16 +387,25 @@ func serialize_slots_json() -> String:
 func deserialize_slots_json(serialized: String) -> bool:
 	var parsed: Variant = JSON.parse_string(serialized)
 	if typeof(parsed) != TYPE_ARRAY:
-		return false
+		if typeof(parsed) == TYPE_DICTIONARY:
+			var parsed_dictionary: Dictionary = parsed as Dictionary
+			var slots_variant: Variant = parsed_dictionary.get("slots", [])
+			if typeof(slots_variant) == TYPE_ARRAY:
+				parsed = slots_variant
+			else:
+				return false
+		else:
+			return false
+
 	var parsed_array: Array = parsed as Array
-	var normalized: Array[Dictionary] = _empty_slot_array()
-	for slot_index in range(mini(parsed_array.size(), normalized.size())):
+	var normalized_slots: Array[Dictionary] = _empty_slot_array()
+	for slot_index in range(mini(parsed_array.size(), normalized_slots.size())):
 		var raw_slot: Variant = parsed_array[slot_index]
 		if typeof(raw_slot) != TYPE_DICTIONARY:
 			continue
-		var raw_dictionary: Dictionary = raw_slot as Dictionary
-		normalized[slot_index] = _normalize_slot(raw_dictionary)
-	_set_slots_internal(normalized)
+		normalized_slots[slot_index] = _normalize_slot(raw_slot as Dictionary)
+
+	_set_inventory_state_internal(normalized_slots)
 	return true
 
 
@@ -462,7 +471,7 @@ func _resolve_item_data(item_data_path: String) -> Resource:
 	return null
 
 
-func _set_slots_internal(new_slots: Array[Dictionary]) -> void:
+func _set_inventory_state_internal(new_slots: Array[Dictionary]) -> void:
 	_slots = _empty_slot_array()
 	for slot_index in range(mini(new_slots.size(), _slots.size())):
 		_slots[slot_index] = _normalize_slot(new_slots[slot_index])

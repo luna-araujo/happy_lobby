@@ -12,15 +12,11 @@ var target_player_id: int = 0
 var reward_amount: int = 0
 var _flight_start_position: Vector3 = Vector3.ZERO
 var _flight_tween: Tween
-var _audio_player: AudioStreamPlayer3D
 var _coin_visual_root: Node3D
 
 
 func _ready() -> void:
-	_audio_player = get_node_or_null("CoinAudio") as AudioStreamPlayer3D
 	_coin_visual_root = get_node_or_null("CoinModel") as Node3D
-	if _audio_player != null and _audio_player.stream == null:
-		_audio_player.stream = _build_coin_sound_stream()
 	if _coin_visual_root != null:
 		_apply_gold_material_to_coin()
 		_coin_visual_root.rotate_y(randf() * TAU)
@@ -63,9 +59,6 @@ func _update_flight(progress: float) -> void:
 func _on_flight_finished() -> void:
 	if _coin_visual_root != null:
 		_coin_visual_root.visible = false
-	if _audio_player != null and _audio_player.stream != null:
-		_audio_player.play()
-		await _audio_player.finished
 	queue_free()
 
 
@@ -95,31 +88,6 @@ func _find_avatar_by_player_id(target_id: int) -> Avatar:
 			if child is Node:
 				stack.push_back(child)
 	return null
-
-
-func _build_coin_sound_stream() -> AudioStreamWAV:
-	var sample_rate: int = 44100
-	var length_seconds: float = 0.16
-	var sample_count: int = int(length_seconds * float(sample_rate))
-	var pcm_data: PackedByteArray = PackedByteArray()
-	pcm_data.resize(sample_count * 2)
-
-	for sample_index in range(sample_count):
-		var t: float = float(sample_index) / float(sample_rate)
-		var envelope: float = exp(-18.0 * t)
-		var tone_a: float = sin(TAU * 1800.0 * t)
-		var tone_b: float = sin(TAU * 2600.0 * t) * 0.5
-		var mixed: float = (tone_a + tone_b) * 0.5 * envelope
-		var sample_value: int = int(clampf(mixed, -1.0, 1.0) * 32767.0)
-		pcm_data[sample_index * 2] = sample_value & 0xFF
-		pcm_data[(sample_index * 2) + 1] = (sample_value >> 8) & 0xFF
-
-	var stream: AudioStreamWAV = AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.data = pcm_data
-	return stream
 
 
 func _apply_gold_material_to_coin() -> void:

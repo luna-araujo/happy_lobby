@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://ui_components/create_lobby_button.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://ui_components/join_lobby_button.gd" id="3_lquwl"]
 [ext_resource type="PackedScene" uid="uid://da6np2odmdu88" path="res://game_world/NeoWorld.tscn" id="6_7mycd"]
-[ext_resource type="PackedScene" path="res://ui_components/player_ui.tscn" id="7_player_ui"]
+[ext_resource type="PackedScene" uid="uid://dbi6jduedmmsd" path="res://ui_components/player_ui.tscn" id="7_player_ui"]
 
 [node name="Main" type="Node" unique_id=2063291942]
 
@@ -18,16 +18,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="ColorRect" type="ColorRect" parent="MainMenu" unique_id=826420004]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.22365947, 0.16766837, 0.20779534, 1)
 
 [node name="SteamInfo" parent="MainMenu" unique_id=1469103975 instance=ExtResource("1_ig7tw")]
 layout_mode = 1
@@ -83,4 +73,4 @@ script = ExtResource("3_1bvp3")
 
 [node name="NeoWorld" parent="." unique_id=462384816 instance=ExtResource("6_7mycd")]
 
-[node name="PlayerUI" parent="." instance=ExtResource("7_player_ui")]
+[node name="PlayerUI" parent="." unique_id=2077547902 instance=ExtResource("7_player_ui")]
