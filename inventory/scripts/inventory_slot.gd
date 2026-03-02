@@ -31,8 +31,8 @@ func configure(
 	empty_slot_text = new_empty_slot_text
 	_slot_size = Vector2(maxf(slot_size.x, 48.0), maxf(slot_size.y, 48.0))
 	custom_minimum_size = _slot_size
-	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	size_flags_horizontal = Control.SIZE_FILL
+	size_flags_vertical = Control.SIZE_FILL
 	_rebuild_contents()
 
 
@@ -154,53 +154,62 @@ func _rebuild_contents() -> void:
 	for child in get_children():
 		child.queue_free()
 
-	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	add_child(margin)
-
-	var root_vbox: VBoxContainer = VBoxContainer.new()
-	root_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	root_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	root_vbox.add_theme_constant_override("separation", 4)
-	margin.add_child(root_vbox)
+	var content_root: Control = Control.new()
+	_set_mouse_passthrough(content_root)
+	content_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content_root.offset_left = 6.0
+	content_root.offset_top = 6.0
+	content_root.offset_right = -6.0
+	content_root.offset_bottom = -6.0
+	add_child(content_root)
 
 	if slot_data.is_empty():
 		var empty_label: Label = Label.new()
+		_set_mouse_passthrough(empty_label)
 		if slot_index < 0:
 			empty_label.text = empty_slot_text
 		else:
 			empty_label.text = "[%d] %s" % [slot_index, empty_slot_text]
+		empty_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		empty_label.clip_text = true
-		root_vbox.add_child(empty_label)
+		content_root.add_child(empty_label)
 		return
+
+	var footer_height: float = 18.0
+	var body: Control = Control.new()
+	_set_mouse_passthrough(body)
+	body.set_anchors_preset(Control.PRESET_FULL_RECT)
+	body.offset_bottom = -footer_height
+	content_root.add_child(body)
 
 	if icon != null:
 		var icon_rect: TextureRect = TextureRect.new()
+		_set_mouse_passthrough(icon_rect)
+		icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_rect.texture = icon
-		var slot_icon_size: float = maxf(minf(_slot_size.x, _slot_size.y) - 16.0, 24.0)
-		icon_rect.custom_minimum_size = Vector2(slot_icon_size, slot_icon_size)
-		icon_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		icon_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		root_vbox.add_child(icon_rect)
+		body.add_child(icon_rect)
 	else:
 		var text_label: Label = Label.new()
+		_set_mouse_passthrough(text_label)
 		text_label.text = display_name
+		text_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		text_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		text_label.clip_text = true
-		root_vbox.add_child(text_label)
+		body.add_child(text_label)
 
 	var footer_label: Label = Label.new()
+	_set_mouse_passthrough(footer_label)
+	footer_label.anchor_top = 1.0
+	footer_label.anchor_right = 1.0
+	footer_label.anchor_bottom = 1.0
+	footer_label.offset_top = -footer_height
 	var quantity: int = int(slot_data.get("quantity", 0))
 	var quantity_text: String = "x%d" % maxi(quantity, 0)
 	if show_quantity:
@@ -211,4 +220,10 @@ func _rebuild_contents() -> void:
 	footer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	footer_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	footer_label.clip_text = true
-	root_vbox.add_child(footer_label)
+	content_root.add_child(footer_label)
+
+
+func _set_mouse_passthrough(control: Control) -> void:
+	if control == null:
+		return
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE

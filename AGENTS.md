@@ -44,6 +44,8 @@ Notes:
 - Expected release assets:
   - `happy_lobby-vX.Y.Z-windows.zip`
   - `happy_lobby-vX.Y.Z-linux.zip`
+  - `happy_lobby-vX.Y.Z-macos.zip`
+- macOS release builds are currently unsigned (no codesign/notarization yet), so first launch may require Gatekeeper override.
 
 ## Coding Style & Naming Conventions
 Follow existing GDScript conventions in this repo:

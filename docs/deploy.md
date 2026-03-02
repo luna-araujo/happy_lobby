@@ -1,4 +1,4 @@
-# Deploying Builds (Windows/Linux)
+# Deploying Builds (Windows/Linux/macOS)
 
 This project ships release builds to GitHub Releases from git tags.
 
@@ -6,11 +6,11 @@ This project ships release builds to GitHub Releases from git tags.
 
 - `Windows Desktop` export -> `happy_lobby-<tag>-windows.zip`
 - `Linux/X11` export -> `happy_lobby-<tag>-linux.zip`
+- `macOS` export -> `happy_lobby-<tag>-macos.zip`
 
 Current phase scope:
 
-- Implemented: Windows + Linux
-- Deferred: macOS
+- Implemented: Windows + Linux + macOS
 
 ## Steam behavior in release builds
 
@@ -48,6 +48,7 @@ Release builds run on tag pushes matching `v*`, but only publish for stable SemV
 - GitHub Release limits (current): up to 1000 assets per release, each asset under 2 GiB.
   Reference: https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
 
-## Future macOS phase
+## macOS signing status
 
-When macOS is enabled, add a macOS export preset and extend the workflow to archive/upload a macOS build.
+macOS release artifacts are currently unsigned (no codesign/notarization in CI yet).
+Depending on macOS/Gatekeeper settings, users may need to allow first launch manually.

@@ -43,7 +43,7 @@ jobs:
           relative_project_path: ./
           use_preset_export_path: true
           cache: true
-          presets_to_export: Windows Desktop,Linux/X11
+          presets_to_export: Windows Desktop,Linux/X11,macOS
 
       - name: Archive platform exports
         shell: bash
@@ -53,6 +53,7 @@ jobs:
 
           (cd .exports/windows && zip -r "../../dist/happy_lobby-${VERSION}-windows.zip" .)
           (cd .exports/linux && zip -r "../../dist/happy_lobby-${VERSION}-linux.zip" .)
+          (cd .exports/macos && zip -r "../../dist/happy_lobby-${VERSION}-macos.zip" .)
 
       - name: Publish GitHub release assets
         uses: softprops/action-gh-release@v2
@@ -62,3 +63,4 @@ jobs:
           files: |
             dist/happy_lobby-${{ github.ref_name }}-windows.zip
             dist/happy_lobby-${{ github.ref_name }}-linux.zip
+            dist/happy_lobby-${{ github.ref_name }}-macos.zip
