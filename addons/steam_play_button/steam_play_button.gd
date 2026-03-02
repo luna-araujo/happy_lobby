@@ -5,6 +5,7 @@ const STEAM_ENV_NAME: String = "HAPPY_LOBBY_STEAM"
 const STEAM_ICON_PATH: String = "res://addons/steam_play_button/icons/steam.svg"
 
 var steam_play_button: Button = null
+var toolbar_parent: Node = null
 var remaining_place_attempts: int = 0
 
 
@@ -19,6 +20,7 @@ func _enter_tree() -> void:
 
 	# Add first via plugin API so enable/disable lifecycle remains editor-friendly.
 	add_control_to_container(CONTAINER_TOOLBAR, steam_play_button)
+	toolbar_parent = steam_play_button.get_parent()
 
 	# Then try to place it right after Godot's Main Play button.
 	remaining_place_attempts = 20
@@ -48,14 +50,17 @@ func _exit_tree() -> void:
 	if steam_play_button == null:
 		return
 
-	# If still in standard plugin container, cleanly remove it.
-	if steam_play_button.get_parent() != null:
-		remove_control_from_container(CONTAINER_TOOLBAR, steam_play_button)
-		if steam_play_button.get_parent() != null:
-			steam_play_button.get_parent().remove_child(steam_play_button)
+	var current_parent: Node = steam_play_button.get_parent()
+	if current_parent != null:
+		# Only call the container API while the button is still owned by that container.
+		if toolbar_parent != null and current_parent == toolbar_parent:
+			remove_control_from_container(CONTAINER_TOOLBAR, steam_play_button)
+		elif current_parent.has_method("remove_child"):
+			current_parent.remove_child(steam_play_button)
 
 	steam_play_button.queue_free()
 	steam_play_button = null
+	toolbar_parent = null
 
 
 func _on_steam_play_pressed() -> void:

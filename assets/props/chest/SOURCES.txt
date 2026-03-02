@@ -8,5 +8,6 @@ Chest scene assets:
 - Downloaded model assets (Kenney):
   - Block model: https://raw.githubusercontent.com/KenneyNL/Starter-Kit-Basic-Scene/main/sample/Mini%20Arena/Models/GLB%20format/block.glb
   - Trophy model (not used in scene, kept as optional prop): https://raw.githubusercontent.com/KenneyNL/Starter-Kit-Basic-Scene/main/sample/Mini%20Arena/Models/GLB%20format/trophy.glb
+  - Shared colormap texture required by both GLBs: https://raw.githubusercontent.com/KenneyNL/Starter-Kit-Basic-Scene/main/sample/Mini%20Arena/Models/GLB%20format/Textures/colormap.png
   - Upstream project: https://github.com/KenneyNL/Starter-Kit-Basic-Scene
   - License: MIT (see upstream repository)
