@@ -408,7 +408,6 @@ func _update_visual_equipped_state() -> void:
 		beretta_instance.visible = is_gun_equipped()
 	if not is_gun_equipped():
 		_is_aiming = false
-		_aim_target_initialized = false
 		_hand_override_blend = 0.0
 		if right_hand_anchor != null:
 			right_hand_anchor.override_pose = false
@@ -416,12 +415,6 @@ func _update_visual_equipped_state() -> void:
 
 func _update_aim_target_position(delta: float) -> void:
 	if aim_target == null:
-		return
-	if not _is_aiming:
-		_aim_target_initialized = false
-		return
-	if not is_gun_equipped():
-		_aim_target_initialized = false
 		return
 	if avatar == null:
 		return
