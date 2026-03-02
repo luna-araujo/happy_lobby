@@ -31,7 +31,7 @@ func _process(_delta: float) -> void:
 		return
 
 	var nearby_npc: TestNpc = _find_nearest_lootable_npc(maxf(interaction_range, 0.1))
-	var nearby_chest: StorageChest = _find_nearest_accessible_chest(maxf(interaction_range, 0.1))
+	var nearby_chest: Node3D = _find_nearest_accessible_chest(maxf(interaction_range, 0.1))
 	_update_prompt_for_target(nearby_npc, nearby_chest)
 
 	if Input.is_action_just_pressed(String(interact_action)):
@@ -113,7 +113,7 @@ func _toggle_interaction() -> void:
 		return
 
 	var nearest_npc: TestNpc = _find_nearest_lootable_npc(maxf(interaction_range, 0.1))
-	var nearest_chest: StorageChest = _find_nearest_accessible_chest(maxf(interaction_range, 0.1))
+	var nearest_chest: Node3D = _find_nearest_accessible_chest(maxf(interaction_range, 0.1))
 	match _resolve_preferred_target(nearest_npc, nearest_chest):
 		InteractionTargetType.NPC:
 			_open_loot_view_for_npc(nearest_npc)
@@ -134,7 +134,7 @@ func _refresh_active_target() -> void:
 		return
 
 	if _active_loot_chest_id != -1:
-		var chest: StorageChest = _find_chest_by_id(_active_loot_chest_id)
+		var chest: Node3D = _find_chest_by_id(_active_loot_chest_id)
 		if chest == null:
 			_close_loot_view()
 			return
@@ -160,7 +160,7 @@ func _open_loot_view_for_npc(npc: TestNpc) -> void:
 	UIManager.player_ui.open_loot_inventory_for_npc(_active_loot_npc_id, npc.inventory, loot_title)
 
 
-func _open_loot_view_for_chest(chest: StorageChest) -> void:
+func _open_loot_view_for_chest(chest: Node3D) -> void:
 	if avatar == null:
 		return
 	if UIManager == null:
@@ -169,15 +169,24 @@ func _open_loot_view_for_chest(chest: StorageChest) -> void:
 		return
 	if chest == null:
 		return
-	if chest.inventory == null:
+	if not _node_looks_like_chest(chest):
+		return
+
+	var chest_inventory: Inventory = chest.get_node_or_null("Inventory") as Inventory
+	if chest_inventory == null:
+		var chest_inventory_variant: Variant = chest.get("inventory")
+		chest_inventory = chest_inventory_variant as Inventory
+	if chest_inventory == null:
 		return
 
 	_active_loot_npc_id = -1
-	_active_loot_chest_id = chest.chest_id
-	var chest_title: String = chest.display_name.strip_edges()
+	_active_loot_chest_id = int(chest.get("chest_id"))
+	if _active_loot_chest_id <= 0:
+		return
+	var chest_title: String = String(chest.get("display_name")).strip_edges()
 	if chest_title.is_empty():
 		chest_title = "Chest"
-	UIManager.player_ui.open_loot_inventory_for_chest(_active_loot_chest_id, chest.inventory, chest_title)
+	UIManager.player_ui.open_loot_inventory_for_chest(_active_loot_chest_id, chest_inventory, chest_title)
 
 
 func _close_loot_view() -> void:
@@ -190,7 +199,7 @@ func _close_loot_view() -> void:
 	UIManager.player_ui.close_loot_inventory()
 
 
-func _update_prompt_for_target(npc: TestNpc, chest: StorageChest) -> void:
+func _update_prompt_for_target(npc: TestNpc, chest: Node3D) -> void:
 	if UIManager == null:
 		return
 	if UIManager.player_ui == null:
@@ -199,7 +208,7 @@ func _update_prompt_for_target(npc: TestNpc, chest: StorageChest) -> void:
 		InteractionTargetType.NPC:
 			UIManager.player_ui.set_interaction_prompt(_build_interaction_prompt_text_for_npc(npc.display_name))
 		InteractionTargetType.CHEST:
-			var target_name: String = chest.display_name.strip_edges()
+			var target_name: String = String(chest.get("display_name")).strip_edges()
 			if target_name.is_empty():
 				target_name = "Chest"
 			UIManager.player_ui.set_interaction_prompt(_build_interaction_prompt_text_for_chest(target_name))
@@ -236,16 +245,18 @@ func _find_nearest_lootable_npc(max_distance: float) -> TestNpc:
 	return nearest_npc
 
 
-func _find_nearest_accessible_chest(max_distance: float) -> StorageChest:
-	var nearest_chest: StorageChest = null
+func _find_nearest_accessible_chest(max_distance: float) -> Node3D:
+	var nearest_chest: Node3D = null
 	var nearest_distance_sq: float = max_distance * max_distance
 	var avatar_position: Vector3 = _get_avatar_interaction_position()
 	var candidates: Array = _get_chest_candidates()
 	for candidate in candidates:
-		if not (candidate is StorageChest):
+		if not (candidate is Node3D):
 			continue
-		var chest: StorageChest = candidate as StorageChest
+		var chest: Node3D = candidate as Node3D
 		if chest == null:
+			continue
+		if not _node_looks_like_chest(chest):
 			continue
 		if not _is_chest_within_local_range(chest, max_distance):
 			continue
@@ -257,7 +268,7 @@ func _find_nearest_accessible_chest(max_distance: float) -> StorageChest:
 	return nearest_chest
 
 
-func _resolve_preferred_target(npc: TestNpc, chest: StorageChest) -> int:
+func _resolve_preferred_target(npc: TestNpc, chest: Node3D) -> int:
 	if npc == null and chest == null:
 		return InteractionTargetType.NONE
 	if npc != null and chest == null:
@@ -273,7 +284,7 @@ func _resolve_preferred_target(npc: TestNpc, chest: StorageChest) -> int:
 	return InteractionTargetType.NPC
 
 
-func _is_chest_within_local_range(chest: StorageChest, max_distance: float) -> bool:
+func _is_chest_within_local_range(chest: Node3D, max_distance: float) -> bool:
 	if chest == null:
 		return false
 	if avatar == null:
@@ -373,35 +384,70 @@ func _find_npc_by_id(target_npc_id: int) -> TestNpc:
 	return null
 
 
-func _find_chest_by_id(target_chest_id: int) -> StorageChest:
+func _find_chest_by_id(target_chest_id: int) -> Node3D:
 	if target_chest_id <= 0:
 		return null
 	var candidates: Array = _get_chest_candidates()
 	for candidate in candidates:
-		if not (candidate is StorageChest):
+		if not (candidate is Node3D):
 			continue
-		var chest: StorageChest = candidate as StorageChest
-		if chest != null and chest.chest_id == target_chest_id:
+		var chest: Node3D = candidate as Node3D
+		if chest == null:
+			continue
+		if not _node_looks_like_chest(chest):
+			continue
+		var candidate_id: int = int(chest.get("chest_id"))
+		if candidate_id == target_chest_id:
 			return chest
 	return null
 
 
 func _get_chest_candidates() -> Array:
+	var merged: Array = []
+	var seen: Dictionary = {}
 	var from_group: Array = get_tree().get_nodes_in_group("StorageChest")
-	if not from_group.is_empty():
-		return from_group
+	for candidate in from_group:
+		if not (candidate is Node):
+			continue
+		var node_candidate: Node = candidate as Node
+		if node_candidate == null:
+			continue
+		var key: int = node_candidate.get_instance_id()
+		if seen.has(key):
+			continue
+		seen[key] = true
+		merged.append(node_candidate)
 
-	# Fallback for cases where group registration lags or misses on clients.
+	# Fallback for cases where group registration lags or script class differs on clients.
 	var all_nodes: Array = []
 	var stack: Array[Node] = [get_tree().root]
 	while stack.size() > 0:
 		var current: Node = stack.pop_back()
-		if current is StorageChest:
-			all_nodes.append(current)
+		if _node_looks_like_chest(current):
+			var key: int = current.get_instance_id()
+			if not seen.has(key):
+				seen[key] = true
+				all_nodes.append(current)
 		for child in current.get_children():
 			if child is Node:
 				stack.push_back(child)
-	return all_nodes
+	merged.append_array(all_nodes)
+	return merged
+
+
+func _node_looks_like_chest(node: Node) -> bool:
+	if node == null:
+		return false
+	if not (node is Node3D):
+		return false
+	if node.is_in_group("StorageChest"):
+		return true
+	if not node.has_node("Inventory"):
+		return false
+	var chest_id_variant: Variant = node.get("chest_id")
+	if typeof(chest_id_variant) == TYPE_INT:
+		return int(chest_id_variant) > 0
+	return false
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -446,10 +492,10 @@ func _server_try_chest_take(sender_id: int, chest_id: int, from_slot: int, prefe
 		return
 	if sender_id <= 0:
 		return
-	var chest: StorageChest = _find_chest_by_id(chest_id)
+	var chest: Node3D = _find_chest_by_id(chest_id)
 	if chest == null:
 		return
-	chest.try_transfer_to_player(sender_id, from_slot, preferred_to_slot)
+	chest.call("try_transfer_to_player", sender_id, from_slot, preferred_to_slot)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -470,7 +516,7 @@ func _server_try_chest_store(sender_id: int, chest_id: int, from_player_slot: in
 		return
 	if sender_id <= 0:
 		return
-	var chest: StorageChest = _find_chest_by_id(chest_id)
+	var chest: Node3D = _find_chest_by_id(chest_id)
 	if chest == null:
 		return
-	chest.try_transfer_from_player(sender_id, from_player_slot, preferred_chest_slot)
+	chest.call("try_transfer_from_player", sender_id, from_player_slot, preferred_chest_slot)

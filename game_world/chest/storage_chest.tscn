@@ -16,7 +16,7 @@ roughness = 0.95
 material = SubResource("StandardMaterial3D_chest")
 size = Vector3(1.0, 0.8, 0.8)
 
-[node name="StorageChest" type="StaticBody3D"]
+[node name="StorageChest" type="StaticBody3D" groups=["StorageChest"]]
 script = ExtResource("1_chest_script")
 chest_id = 1
 display_name = "Shared Chest"

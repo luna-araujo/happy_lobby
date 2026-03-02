@@ -451,6 +451,8 @@ func _configure_inventory_ui() -> void:
 		_loot_inventory_ui.set_drag_permissions(true, false)
 		_loot_inventory_ui.set_show_gun_slot(false)
 		_loot_inventory_ui.set_gun_slot_interactive(false)
+		if not _loot_inventory_ui.external_drop_requested.is_connected(_on_inventory_external_drop_requested):
+			_loot_inventory_ui.external_drop_requested.connect(_on_inventory_external_drop_requested)
 		if not _loot_inventory_ui.item_inspect_requested.is_connected(_on_item_inspect_requested):
 			_loot_inventory_ui.item_inspect_requested.connect(_on_item_inspect_requested)
 	_set_loot_inventory_close_button_visible(false)
@@ -491,6 +493,8 @@ func _on_inventory_external_drop_requested(source_ui: InventoryUi, from_slot: in
 
 	if source_ui == _inventory_ui and target_ui == _loot_inventory_ui:
 		if _active_loot_chest_id == -1:
+			return
+		if _loot_inventory_ui != null and _loot_inventory_ui.is_read_only:
 			return
 		if not _bound_avatar.has_method("request_chest_store"):
 			return
