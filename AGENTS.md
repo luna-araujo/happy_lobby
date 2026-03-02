@@ -17,6 +17,29 @@ Use the Godot 4.6 editor for daily development.
 
 If `godot4` is not in `PATH`, use the local editor binary configured in `.vscode/settings.json`.
 
+## Publish Release Builds
+Use the tag-based GitHub release flow to publish new player builds.
+
+1. Commit and push your latest game changes to `main`.
+2. Create a new stable SemVer tag in the format `vX.Y.Z` (for example `v0.1.1`).
+3. Push that tag to GitHub.
+4. Wait for the `Release Builds` GitHub Actions workflow to finish.
+5. Share artifacts from the GitHub Release page for that tag.
+
+Commands:
+- `git add .`
+- `git commit -m "Describe the build change"`
+- `git push origin main`
+- `git tag v0.1.1`
+- `git push origin v0.1.1`
+
+Notes:
+- Only stable tags like `v1.2.3` publish builds.
+- Pre-release-style tags like `v1.2.3-rc1` are skipped by the release workflow.
+- Expected release assets:
+  - `happy_lobby-vX.Y.Z-windows.zip`
+  - `happy_lobby-vX.Y.Z-linux.zip`
+
 ## Coding Style & Naming Conventions
 Follow existing GDScript conventions in this repo:
 - Use 4-space indentation and UTF-8 encoding.
