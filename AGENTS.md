@@ -59,6 +59,18 @@ There is no committed automated unit test framework yet. Validate changes with f
 - Verify late join behavior for player spawn/customization sync.
 - For UI/editor changes, re-open affected scenes to confirm exported node paths and signal bindings.
 
+### Runtime Debug Log Check (required after multiplayer testing)
+For side-by-side local debugging, launch two instances and capture logs:
+- `/home/luna/Godot/Editor/Godot_v4.6.1-stable_linux.x86_64 --path . --scene main.tscn --windowed --resolution 960x1056 --position 0,24 >/tmp/happy_lobby_instance_1.log 2>&1 &`
+- `/home/luna/Godot/Editor/Godot_v4.6.1-stable_linux.x86_64 --path . --scene main.tscn --windowed --resolution 960x1056 --position 960,24 >/tmp/happy_lobby_instance_2.log 2>&1 &`
+
+After finishing test steps, always scan logs for runtime issues:
+- `rg -n "ERROR|SCRIPT ERROR|E [0-9]|Invalid|Failed|CRASH|Assertion" /tmp/happy_lobby_instance_1.log /tmp/happy_lobby_instance_2.log`
+
+If matches are found:
+- Include the relevant lines in your test report/PR notes.
+- Do not claim a clean pass until the errors are triaged or explicitly called out.
+
 Document manual verification steps in PRs until automated tests are added.
 
 ## Commit & Pull Request Guidelines

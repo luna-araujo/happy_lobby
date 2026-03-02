@@ -27,6 +27,58 @@
             "fixed_fps": 30,
             // anything else
             "additional_options": ""
+        },
+        {
+            "name": "Launch Main (Left Window)",
+            "type": "godot",
+            "request": "launch",
+            "project": "${workspaceFolder}",
+            "address": "127.0.0.1",
+            "port": 6007,
+            "scene": "main",
+            "profiling": false,
+            "single_threaded_scene": false,
+            "debug_collisions": false,
+            "debug_paths": false,
+            "debug_navigation": false,
+            "debug_avoidance": false,
+            "debug_stringnames": false,
+            "frame_delay": 0,
+            "time_scale": 1.0,
+            "disable_vsync": false,
+            "fixed_fps": 30,
+            "additional_options": "--windowed --resolution 960x1056 --position 0,24"
+        },
+        {
+            "name": "Launch Main (Right Window)",
+            "type": "godot",
+            "request": "launch",
+            "project": "${workspaceFolder}",
+            "address": "127.0.0.1",
+            "port": 6008,
+            "scene": "main",
+            "profiling": false,
+            "single_threaded_scene": false,
+            "debug_collisions": false,
+            "debug_paths": false,
+            "debug_navigation": false,
+            "debug_avoidance": false,
+            "debug_stringnames": false,
+            "frame_delay": 0,
+            "time_scale": 1.0,
+            "disable_vsync": false,
+            "fixed_fps": 30,
+            "additional_options": "--windowed --resolution 960x1056 --position 960,24"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch Main (Side by Side)",
+            "configurations": [
+                "Launch Main (Left Window)",
+                "Launch Main (Right Window)"
+            ],
+            "stopAll": true
         }
     ]
 }
