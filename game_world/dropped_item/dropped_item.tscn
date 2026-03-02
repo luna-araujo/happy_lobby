@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://c41v5vsxy18r5"]
+
+[ext_resource type="Script" uid="uid://b58rk3w7y3ge8" path="res://game_world/dropped_item/dropped_item.gd" id="1_dropped_item_script"]
+[ext_resource type="Script" uid="uid://d1s8jppsheeyj" path="res://game_world/dropped_item/dropped_item_interaction_area.gd" id="2_interaction_script"]
+[ext_resource type="Texture2D" uid="uid://b3773g6dx4wjy" path="res://assets/items/beretta_icon.png" id="3_qcmpb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
+radius = 0.79652554
+
+[node name="DroppedItem" type="Node3D" unique_id=1960105418]
+script = ExtResource("1_dropped_item_script")
+
+[node name="InteractionArea" type="Area3D" parent="." unique_id=1713772139]
+monitoring = false
+monitorable = false
+script = ExtResource("2_interaction_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea" unique_id=141385204]
+shape = SubResource("SphereShape3D_pickup")
+
+[node name="VisualRoot" type="Node3D" parent="." unique_id=740167786]
+
+[node name="SpriteA" type="Sprite3D" parent="VisualRoot" unique_id=1367051954]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0, 0, 0, 1, 0, 0, 0)
+pixel_size = 0.0016
+billboard = 1
+texture = ExtResource("3_qcmpb")
+
+[node name="SpriteB" type="Sprite3D" parent="VisualRoot" unique_id=1034591701]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0, 0, 0, 1, 0.07, 0.04, -0.05)
+pixel_size = 0.0016
+billboard = 1
+texture = ExtResource("3_qcmpb")
+
+[node name="SpriteC" type="Sprite3D" parent="VisualRoot" unique_id=1057550345]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0, 0, 0, 1, -0.07, 0.08, 0.06)
+pixel_size = 0.0016
+billboard = 1
+texture = ExtResource("3_qcmpb")
+
+[node name="QuantityLabel" type="Label3D" parent="VisualRoot" unique_id=277260313]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0.24, 0)
+modulate = Color(1, 1, 1, 0.96)
+outline_modulate = Color(0, 0, 0, 0.92)
+text = "x1"
+font_size = 56

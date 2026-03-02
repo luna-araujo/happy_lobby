@@ -35,6 +35,9 @@ var _heavy_melee_burst_used: bool = false
 var _desired_tree_state: StringName = &"Locomotion"
 var _tree_state_initialized: bool = false
 var _network_locomotion_speed: float = -1.0
+var _network_jump_on_floor: bool = true
+var _network_jump_vertical_velocity: float = 0.0
+var _network_jump_state_initialized: bool = false
 var _current_locomotion_blend: float = 0.0
 var _visual_base_scale: Vector3 = Vector3.ONE
 var _jump_target_scale: Vector3 = Vector3.ONE
@@ -168,6 +171,15 @@ func set_network_tree_state(state_name: StringName) -> void:
 
 func set_network_locomotion_speed(horizontal_speed: float) -> void:
 	_network_locomotion_speed = maxf(horizontal_speed, 0.0)
+
+
+func set_network_jump_state(on_floor: bool, vertical_velocity: float) -> void:
+	_network_jump_on_floor = on_floor
+	_network_jump_vertical_velocity = vertical_velocity
+	if not _network_jump_state_initialized:
+		_was_on_floor = on_floor
+		_last_vertical_velocity = vertical_velocity
+	_network_jump_state_initialized = true
 
 
 func _update_locomotion_blend(horizontal_speed: float = -1.0) -> void:
@@ -351,8 +363,12 @@ func _update_jump_squash_stretch(delta: float) -> void:
 		_jump_target_scale = _visual_base_scale
 		_landing_squash_time_left = 0.0
 	else:
+		var use_network_jump_state: bool = not movement_body.is_multiplayer_authority() and _network_jump_state_initialized
 		var on_floor: bool = movement_body.is_on_floor()
 		var vertical_velocity: float = movement_body.velocity.y
+		if use_network_jump_state:
+			on_floor = _network_jump_on_floor
+			vertical_velocity = _network_jump_vertical_velocity
 
 		if on_floor:
 			if not _was_on_floor:

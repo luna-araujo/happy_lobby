@@ -24,7 +24,7 @@
             "frame_delay": 0,
             "time_scale": 1.0,
             "disable_vsync": false,
-            "fixed_fps": 30,
+            "fixed_fps": 60,
             // anything else
             "additional_options": ""
         },
@@ -46,7 +46,7 @@
             "frame_delay": 0,
             "time_scale": 1.0,
             "disable_vsync": false,
-            "fixed_fps": 30,
+            "fixed_fps": 60,
             "additional_options": "--windowed --resolution 960x1056 --position 0,24"
         },
         {
@@ -67,7 +67,7 @@
             "frame_delay": 0,
             "time_scale": 1.0,
             "disable_vsync": false,
-            "fixed_fps": 30,
+            "fixed_fps": 60,
             "additional_options": "--windowed --resolution 960x1056 --position 960,24"
         }
     ],

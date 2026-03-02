@@ -22,6 +22,11 @@ const BERETTA_ITEM_DATA_PATH: String = "res://items/beretta/beretta_item_data.tr
 @export var hand_override_right_offset: float = 0.35
 @export var hand_override_vertical_offset: float = 1.35
 @export var hand_override_look_offset_degrees: Vector3 = Vector3(0.0, 180.0, 0.0)
+@export var aim_target_lerp_speed: float = 20.0
+@export var hand_override_position_lerp_speed: float = 20.0
+@export var hand_override_rotation_lerp_speed: float = 18.0
+@export var hand_override_blend_in_speed: float = 12.0
+@export var hand_override_blend_out_speed: float = 14.0
 @export var gun_shoot_sfx: AudioStream = preload("res://assets/vfx_samples/audio/sound_hit.wav")
 @export var gun_impact_sfx: AudioStream = preload("res://assets/vfx_samples/audio/hit.wav")
 @export var gun_hit_vfx_scene: PackedScene = preload("res://avatar/effects/scenes/sample_hit_vfx.tscn")
@@ -42,6 +47,11 @@ var _last_local_fire_request_time_ms: int = -1
 var _last_server_fire_time_ms: int = -1
 var _shoot_audio_player: AudioStreamPlayer3D
 var _impact_audio_player: AudioStreamPlayer3D
+var _aim_target_initialized: bool = false
+var _hand_override_blend: float = 0.0
+var _cached_release_local_transform: Transform3D = Transform3D.IDENTITY
+var _cached_release_global_transform: Transform3D = Transform3D.IDENTITY
+var _cached_release_transform_initialized: bool = false
 
 
 func _ready() -> void:
@@ -61,9 +71,9 @@ func _ready() -> void:
 	_update_visual_equipped_state()
 
 
-func _process(_delta: float) -> void:
-	_update_aim_target_position()
-	_update_hand_attachment_override()
+func _process(delta: float) -> void:
+	_update_aim_target_position(delta)
+	_update_hand_attachment_override(delta)
 	_update_visual_equipped_state()
 
 
@@ -161,7 +171,9 @@ func apply_network_aim_target(position: Vector3) -> void:
 	if avatar == null:
 		return
 	if aim_target != null and not avatar._is_local_controlled():
-		aim_target.global_position = position
+		if not _aim_target_initialized:
+			aim_target.global_position = position
+			_aim_target_initialized = true
 
 
 func request_fire_once() -> void:
@@ -396,33 +408,54 @@ func _update_visual_equipped_state() -> void:
 		beretta_instance.visible = is_gun_equipped()
 	if not is_gun_equipped():
 		_is_aiming = false
+		_aim_target_initialized = false
+		_hand_override_blend = 0.0
+		if right_hand_anchor != null:
+			right_hand_anchor.override_pose = false
 
 
-func _update_aim_target_position() -> void:
+func _update_aim_target_position(delta: float) -> void:
 	if aim_target == null:
 		return
 	if not _is_aiming:
+		_aim_target_initialized = false
 		return
 	if not is_gun_equipped():
+		_aim_target_initialized = false
 		return
 	if avatar == null:
 		return
+	var desired_aim_point: Vector3 = _network_aim_target_position
 	if avatar._is_local_controlled():
-		var resolved_aim_point: Vector3 = _resolve_camera_aim_point()
-		aim_target.global_position = resolved_aim_point
+		desired_aim_point = _resolve_camera_aim_point()
+	if not _aim_target_initialized:
+		aim_target.global_position = desired_aim_point
+		_aim_target_initialized = true
 		return
-	aim_target.global_position = _network_aim_target_position
+	var aim_lerp_weight: float = clampf(maxf(aim_target_lerp_speed, 0.0) * maxf(delta, 0.0), 0.0, 1.0)
+	aim_target.global_position = aim_target.global_position.lerp(desired_aim_point, aim_lerp_weight)
 
 
-func _update_hand_attachment_override() -> void:
+func _update_hand_attachment_override(delta: float) -> void:
 	if right_hand_anchor == null:
 		return
 	if avatar == null:
 		return
-	var should_override: bool = _is_aiming and is_gun_equipped()
-	right_hand_anchor.override_pose = should_override
-	if not should_override:
+	if not right_hand_anchor.override_pose:
+		_cached_release_local_transform = right_hand_anchor.transform
+		_cached_release_global_transform = right_hand_anchor.global_transform
+		_cached_release_transform_initialized = true
+
+	var should_aim_override: bool = _is_aiming and is_gun_equipped()
+	if should_aim_override:
+		_hand_override_blend = minf(_hand_override_blend + maxf(hand_override_blend_in_speed, 0.0) * maxf(delta, 0.0), 1.0)
+	else:
+		_hand_override_blend = maxf(_hand_override_blend - maxf(hand_override_blend_out_speed, 0.0) * maxf(delta, 0.0), 0.0)
+
+	if _hand_override_blend <= 0.001:
+		right_hand_anchor.override_pose = false
 		return
+	right_hand_anchor.override_pose = true
 
 	var target_world: Vector3 = aim_target.global_position if aim_target != null else _network_aim_target_position
 	var movement_reference: Node3D = movement_body
@@ -452,9 +485,43 @@ func _update_hand_attachment_override() -> void:
 	if skeleton != null:
 		var target_local: Transform3D = skeleton.global_transform.affine_inverse() * target_global
 		target_local.basis = target_local.basis.orthonormalized()
-		right_hand_anchor.transform = target_local
+		var release_local: Transform3D = _cached_release_local_transform if _cached_release_transform_initialized else right_hand_anchor.transform
+		var blended_local: Transform3D = _blend_transform(release_local, target_local, _hand_override_blend)
+		right_hand_anchor.transform = _smooth_transform(
+			right_hand_anchor.transform,
+			blended_local,
+			delta
+		)
 		return
-	right_hand_anchor.global_transform = target_global
+	var release_global: Transform3D = _cached_release_global_transform if _cached_release_transform_initialized else right_hand_anchor.global_transform
+	var blended_global: Transform3D = _blend_transform(release_global, target_global, _hand_override_blend)
+	right_hand_anchor.global_transform = _smooth_transform(
+		right_hand_anchor.global_transform,
+		blended_global,
+		delta
+	)
+
+
+func _blend_transform(from_transform: Transform3D, to_transform: Transform3D, blend_weight: float) -> Transform3D:
+	var weight: float = clampf(blend_weight, 0.0, 1.0)
+	var blended_origin: Vector3 = from_transform.origin.lerp(to_transform.origin, weight)
+	var from_quat: Quaternion = from_transform.basis.get_rotation_quaternion()
+	var to_quat: Quaternion = to_transform.basis.get_rotation_quaternion()
+	var blended_quat: Quaternion = from_quat.slerp(to_quat, weight).normalized()
+	return Transform3D(Basis(blended_quat).orthonormalized(), blended_origin)
+
+
+func _smooth_transform(current: Transform3D, target: Transform3D, delta: float) -> Transform3D:
+	var clamped_delta: float = maxf(delta, 0.0)
+	var position_weight: float = clampf(maxf(hand_override_position_lerp_speed, 0.0) * clamped_delta, 0.0, 1.0)
+	var rotation_weight: float = clampf(maxf(hand_override_rotation_lerp_speed, 0.0) * clamped_delta, 0.0, 1.0)
+	var smoothed_origin: Vector3 = current.origin.lerp(target.origin, position_weight)
+
+	var current_quat: Quaternion = current.basis.get_rotation_quaternion()
+	var target_quat: Quaternion = target.basis.get_rotation_quaternion()
+	var smoothed_quat: Quaternion = current_quat.slerp(target_quat, rotation_weight).normalized()
+	var smoothed_basis: Basis = Basis(smoothed_quat).orthonormalized()
+	return Transform3D(smoothed_basis, smoothed_origin)
 
 
 func _resolve_fire_origin() -> Vector3:

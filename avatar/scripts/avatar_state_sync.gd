@@ -20,6 +20,8 @@ func _build_replication_config() -> SceneReplicationConfig:
 	# Animation and combat replication.
 	_add_property(config, NodePath(":network_animation_state"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_move_speed"), SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
+	_add_property(config, NodePath(":network_jump_on_floor"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	_add_property(config, NodePath(":network_jump_vertical_velocity"), SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
 	_add_property(config, NodePath(":network_combat_state"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_hp"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
 	_add_property(config, NodePath(":network_max_hp"), SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)

@@ -81,25 +81,37 @@ func has_item(item_data_path: String, quantity: int = 1) -> bool:
 	return count_item(item_data_path) >= quantity
 
 
+func get_addable_quantity(item_data_path: String, quantity: int) -> int:
+	var normalized_item_data_path: String = item_data_path.strip_edges()
+	if normalized_item_data_path.is_empty():
+		return 0
+	if quantity <= 0:
+		return 0
+
+	var stack_limit: int = _resolve_item_max_stack(normalized_item_data_path)
+	var remaining: int = quantity
+	for slot_data in _slots:
+		if remaining <= 0:
+			break
+		if slot_data.is_empty():
+			remaining -= stack_limit
+			continue
+		if String(slot_data.get("item_data_path", "")) != normalized_item_data_path:
+			continue
+		var current_quantity: int = int(slot_data.get("quantity", 0))
+		var free_space: int = maxi(stack_limit - current_quantity, 0)
+		remaining -= free_space
+	var addable_quantity: int = quantity - maxi(remaining, 0)
+	return maxi(addable_quantity, 0)
+
+
 func can_add_item(item_data_path: String, quantity: int) -> bool:
 	var normalized_item_data_path: String = item_data_path.strip_edges()
 	if normalized_item_data_path.is_empty():
 		return false
 	if quantity <= 0:
 		return false
-
-	var stack_limit: int = _resolve_item_max_stack(normalized_item_data_path)
-	var remaining: int = quantity
-	for slot_data in _slots:
-		if slot_data.is_empty():
-			remaining -= stack_limit
-		elif String(slot_data.get("item_data_path", "")) == normalized_item_data_path:
-			var current_quantity: int = int(slot_data.get("quantity", 0))
-			var free_space: int = stack_limit - current_quantity
-			remaining -= maxi(free_space, 0)
-		if remaining <= 0:
-			return true
-	return false
+	return get_addable_quantity(normalized_item_data_path, quantity) >= quantity
 
 
 func try_grant_item(item_data_path: String, quantity: int = 1) -> bool:

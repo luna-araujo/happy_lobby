@@ -182,6 +182,13 @@ func _on_revived() -> void:
 	_spawn_vfx(revive_vfx, center_position)
 
 
+func play_heal_vfx(vfx_scene: PackedScene) -> void:
+	if vfx_scene == null:
+		return
+	var center_position: Vector3 = _anchor_position(_center_anchor)
+	_spawn_vfx(vfx_scene, center_position)
+
+
 func _play_one_shot(stream: AudioStream, at_position: Vector3) -> void:
 	if stream == null:
 		return

@@ -32,6 +32,7 @@ var third_person_camera: ThirdPersonCamera
 var combat: CharacterCombat
 var parry_fx: Node3D
 var health_bar: AvatarHealthBar
+var avatar_vfx: AvatarVfx
 var melee_controller: AvatarMeleeController
 var gun_controller: AvatarGunController
 var interaction_controller: Node
@@ -46,6 +47,8 @@ var _hit_flash_out_duration: float = 0.18
 @export var parry_counter_stun_duration: float = 1.5
 @export var show_combat_debug: bool = true
 @export var auto_equip_test_beretta: bool = true
+@export var debug_start_at_half_health: bool = true
+@export_range(0.1, 1.0, 0.05) var debug_spawn_health_ratio: float = 0.5
 
 const ATTACK_TYPE_QUICK: int = 0
 const ATTACK_TYPE_HEAVY: int = 1
@@ -53,6 +56,7 @@ const ATTACK_TYPE_HEAVY: int = 1
 var _melee_press_time_ms: int = -1
 var _melee_pressed: bool = false
 var _heavy_melee_triggered: bool = false
+var _aim_toggle_latched: bool = false
 var _debug_layer: CanvasLayer
 var _debug_label: Label
 var _applying_network_combat_state: bool = false
@@ -92,6 +96,32 @@ var network_move_speed: float:
 			return
 		if is_instance_valid(animation_player):
 			animation_player.set_network_locomotion_speed(value)
+
+var _network_jump_on_floor: bool = true
+var network_jump_on_floor: bool:
+	get:
+		return _network_jump_on_floor
+	set(value):
+		if _network_jump_on_floor == value:
+			return
+		_network_jump_on_floor = value
+		if _is_local_controlled():
+			return
+		if is_instance_valid(animation_player):
+			animation_player.set_network_jump_state(_network_jump_on_floor, _network_jump_vertical_velocity)
+
+var _network_jump_vertical_velocity: float = 0.0
+var network_jump_vertical_velocity: float:
+	get:
+		return _network_jump_vertical_velocity
+	set(value):
+		if is_equal_approx(_network_jump_vertical_velocity, value):
+			return
+		_network_jump_vertical_velocity = value
+		if _is_local_controlled():
+			return
+		if is_instance_valid(animation_player):
+			animation_player.set_network_jump_state(_network_jump_on_floor, _network_jump_vertical_velocity)
 
 var _network_combat_state: int = CharacterCombat.CombatState.READY
 var network_combat_state: int:
@@ -245,6 +275,7 @@ func _ready() -> void:
 	third_person_camera = get_node_or_null("ThirdPersonCamera") as ThirdPersonCamera
 	combat = get_node_or_null("CharacterCombat") as CharacterCombat
 	health_bar = get_node_or_null("HealthBar") as AvatarHealthBar
+	avatar_vfx = get_node_or_null("AvatarVfx") as AvatarVfx
 	melee_controller = get_node_or_null("MeleeController") as AvatarMeleeController
 	gun_controller = get_node_or_null("GunController") as AvatarGunController
 	interaction_controller = get_node_or_null("InteractionController")
@@ -266,6 +297,7 @@ func _ready() -> void:
 	if not combat:
 		printerr("CharacterCombat node is missing from Avatar scene.")
 	else:
+		_initialize_spawn_health_for_testing()
 		if not combat.state_changed.is_connected(_on_combat_state_changed):
 			combat.state_changed.connect(_on_combat_state_changed)
 		if not combat.hp_changed.is_connected(_on_hp_changed):
@@ -313,6 +345,9 @@ func _ready() -> void:
 		network_gun_equipped_item_id = gun_controller.get_equipped_item_id()
 		network_gun_is_aiming = gun_controller.is_aiming()
 		network_gun_aim_target_position = gun_controller.get_aim_target_position()
+	if movement_body != null and is_instance_valid(movement_body):
+		network_jump_on_floor = movement_body.is_on_floor()
+		network_jump_vertical_velocity = movement_body.velocity.y
 	_apply_network_inventory_state()
 	refresh_authority_state()
 
@@ -375,8 +410,24 @@ func _auto_grant_and_equip_test_beretta() -> void:
 		inventory.try_grant_item(AvatarGunController.BERETTA_ITEM_DATA_PATH, 1)
 
 
+func _initialize_spawn_health_for_testing() -> void:
+	if combat == null:
+		return
+	if not debug_start_at_half_health:
+		return
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		return
+	var ratio: float = clampf(debug_spawn_health_ratio, 0.1, 1.0)
+	var target_hp: int = maxi(1, int(round(float(combat.max_hp) * ratio)))
+	combat.hp = clampi(target_hp, 1, combat.max_hp)
+	if combat.state == CharacterCombat.CombatState.DEAD and combat.hp > 0:
+		combat.revive(combat.hp)
+
+
 func refresh_authority_state() -> void:
 	var local_player := _is_local_controlled()
+	if not local_player:
+		_aim_toggle_latched = false
 
 	if local_player:
 		if not customized.is_connected(_on_customized_send):
@@ -404,14 +455,24 @@ func _process(delta: float) -> void:
 		var can_use_mouse_combat: bool = true
 		if UIManager != null:
 			can_use_mouse_combat = UIManager.mouse_locked
+		if can_use_mouse_combat and InputMap.has_action("aim_toggle") and Input.is_action_just_pressed("aim_toggle"):
+			_aim_toggle_latched = not _aim_toggle_latched
+		if not can_use_mouse_combat:
+			_aim_toggle_latched = false
 		if is_instance_valid(animation_player):
 			network_animation_state = StringName(animation_player.get_desired_tree_state_name())
 		if is_instance_valid(movement_body):
 			network_move_speed = movement_body.get_horizontal_speed()
+			network_jump_on_floor = movement_body.is_on_floor()
+			network_jump_vertical_velocity = movement_body.velocity.y
 			speed_for_vfx = network_move_speed
 		if gun_controller != null:
+			if not gun_controller.is_gun_equipped():
+				_aim_toggle_latched = false
+			var is_hold_aim_active: bool = can_use_mouse_combat and Input.is_action_pressed("aim")
+			var should_aim: bool = can_use_mouse_combat and (is_hold_aim_active or _aim_toggle_latched)
 			if can_use_mouse_combat:
-				gun_controller.set_aiming(Input.is_action_pressed("aim"))
+				gun_controller.set_aiming(should_aim)
 			else:
 				gun_controller.set_aiming(false)
 			if can_use_mouse_combat and Input.is_action_just_pressed("shoot"):
@@ -759,6 +820,82 @@ func request_chest_store(chest_id: int, from_player_slot: int, preferred_chest_s
 	interaction_controller.call("request_chest_store", chest_id, from_player_slot, preferred_chest_slot)
 
 
+func request_drop_inventory_item(slot_index: int, quantity: int = 1) -> void:
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+	if not _is_local_controlled():
+		return
+
+	if multiplayer.is_server():
+		_server_try_drop_inventory_item(slot_index, quantity)
+		return
+
+	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
+		return
+	_rpc_request_drop_inventory_item.rpc_id(host_id, slot_index, quantity)
+
+
+func request_drop_chest_item(chest_id: int, from_slot: int, quantity: int = 1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_chest_drop_to_world"):
+		return
+	interaction_controller.call("request_chest_drop_to_world", chest_id, from_slot, quantity)
+
+
+func request_drop_npc_loot_item(npc_id: int, from_slot: int, quantity: int = 1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_npc_drop_to_world"):
+		return
+	interaction_controller.call("request_npc_drop_to_world", npc_id, from_slot, quantity)
+
+
+func request_split_inventory_item(slot_index: int, quantity: int = 1) -> void:
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+	if not _is_local_controlled():
+		return
+
+	if multiplayer.is_server():
+		_server_try_split_inventory_item(slot_index, quantity)
+		return
+
+	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
+		return
+	_rpc_request_split_inventory_item.rpc_id(host_id, slot_index, quantity)
+
+
+func request_split_chest_item(chest_id: int, from_slot: int, quantity: int = 1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_chest_split_stack"):
+		return
+	interaction_controller.call("request_chest_split_stack", chest_id, from_slot, quantity)
+
+
+func request_split_npc_loot_item(npc_id: int, from_slot: int, quantity: int = 1) -> void:
+	if interaction_controller == null:
+		return
+	if not interaction_controller.has_method("request_npc_split_stack"):
+		return
+	interaction_controller.call("request_npc_split_stack", npc_id, from_slot, quantity)
+
+
 func request_equip_gun_from_slot(from_slot: int, preferred_return_slot: int = -1) -> void:
 	if inventory == null:
 		return
@@ -801,6 +938,28 @@ func request_unequip_gun_to_inventory(preferred_slot: int = -1) -> void:
 	if not _is_connected_peer(host_id):
 		return
 	_rpc_request_unequip_gun_to_inventory.rpc_id(host_id, preferred_slot)
+
+
+func request_use_inventory_item(slot_index: int) -> void:
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+	if not _is_local_controlled():
+		return
+	if not multiplayer.has_multiplayer_peer():
+		_server_try_use_inventory_item(slot_index)
+		return
+	if multiplayer.is_server():
+		_server_try_use_inventory_item(slot_index)
+		return
+
+	var host_id: int = _resolve_host_peer_id()
+	if host_id <= 0:
+		return
+	if not _is_connected_peer(host_id):
+		return
+	_rpc_request_use_inventory_item.rpc_id(host_id, slot_index)
 
 
 func start_quick_melee() -> bool:
@@ -1056,6 +1215,49 @@ func _rpc_request_unequip_gun_to_inventory(preferred_slot: int) -> void:
 	inventory.call("unequip_gun_to_inventory", preferred_slot)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_use_inventory_item(slot_index: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if slot_index < 0:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	_server_try_use_inventory_item(slot_index)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_drop_inventory_item(slot_index: int, quantity: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	_server_try_drop_inventory_item(slot_index, quantity)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_split_inventory_item(slot_index: int, quantity: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	if sender_id != player_id:
+		return
+	_server_try_split_inventory_item(slot_index, quantity)
+
+
 func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_type: int, swing_token: int) -> void:
 	if not multiplayer.is_server():
 		return
@@ -1120,6 +1322,113 @@ func _server_apply_melee_damage(target_damageable_id: int, amount: int, attack_t
 			var synced_hp: int = damaged_avatar.combat.hp
 			var synced_max_hp: int = damaged_avatar.combat.max_hp
 			damaged_avatar._send_health_sync_to_owner(synced_hp, synced_max_hp)
+
+
+func _server_try_use_inventory_item(slot_index: int) -> void:
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		return
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+
+	var slot_data: Dictionary = inventory.get_slot(slot_index)
+	if slot_data.is_empty():
+		return
+	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return
+	var item_data: Resource = load(item_data_path)
+	if item_data == null:
+		return
+	if not _item_has_use_action(item_data):
+		return
+
+	var applied_amount: int = _apply_item_use_to_avatar(item_data)
+	if applied_amount <= 0:
+		return
+
+	if _item_should_consume_on_use(item_data):
+		_consume_inventory_slot_item(slot_index, 1)
+
+	if combat != null:
+		_send_health_sync_to_owner(combat.hp, combat.max_hp)
+
+	var use_vfx_scene_path: String = _resolve_item_use_vfx_scene_path(item_data)
+	if use_vfx_scene_path.is_empty():
+		return
+	_play_item_use_vfx_by_scene_path(use_vfx_scene_path)
+	if multiplayer.has_multiplayer_peer():
+		_rpc_broadcast_item_use_vfx.rpc(use_vfx_scene_path)
+
+
+func _server_try_drop_inventory_item(slot_index: int, quantity: int) -> void:
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		return
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+	var slot_data: Dictionary = inventory.get_slot(slot_index)
+	if slot_data.is_empty():
+		return
+	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return
+	var current_quantity: int = int(slot_data.get("quantity", 0))
+	if current_quantity <= 0:
+		return
+	var drop_quantity: int = mini(quantity, current_quantity)
+	if drop_quantity <= 0:
+		return
+
+	var world: NeoWorld = _find_world_root()
+	if world == null:
+		return
+
+	if not _consume_inventory_slot_item(slot_index, drop_quantity):
+		return
+
+	var drop_start_position: Vector3 = _resolve_drop_spawn_start_position()
+	var drop_target_anchor_position: Vector3 = _resolve_drop_target_anchor_position()
+	var spawned_item: DroppedItem = world.spawn_dropped_item(
+		item_data_path,
+		drop_quantity,
+		drop_start_position,
+		drop_target_anchor_position
+	)
+	if spawned_item == null:
+		inventory.add_item(item_data_path, drop_quantity)
+		return
+
+
+func _server_try_split_inventory_item(slot_index: int, quantity: int) -> void:
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		return
+	if inventory == null:
+		return
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+
+	var slot_data: Dictionary = inventory.get_slot(slot_index)
+	if slot_data.is_empty():
+		return
+	var current_quantity: int = int(slot_data.get("quantity", 0))
+	if current_quantity <= 1:
+		return
+
+	var split_quantity: int = clampi(quantity, 1, current_quantity - 1)
+	if split_quantity <= 0:
+		return
+
+	var to_slot: int = inventory.find_first_empty_slot()
+	if to_slot >= 0 and inventory.split_stack(slot_index, to_slot, split_quantity):
+		return
+	_server_try_drop_inventory_item(slot_index, split_quantity)
 
 
 func _send_combat_state_sync_to_owner(new_state: int) -> void:
@@ -1209,6 +1518,20 @@ func _rpc_broadcast_melee_hit(attack_type: int, target_damageable_id: int, damag
 	_emit_confirmed_melee_hit_event(attack_type, target_damageable_id, damage)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_broadcast_item_use_vfx(vfx_scene_path: String) -> void:
+	if multiplayer.is_server():
+		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
+	var host_id: int = _resolve_host_peer_id()
+	if sender_id != host_id:
+		return
+	var normalized_vfx_scene_path: String = vfx_scene_path.strip_edges()
+	if normalized_vfx_scene_path.is_empty():
+		return
+	_play_item_use_vfx_by_scene_path(normalized_vfx_scene_path)
+
+
 func _apply_synced_health(new_hp: int, new_max_hp: int) -> void:
 	var safe_max: int = maxi(new_max_hp, 1)
 	var safe_hp: int = clampi(new_hp, 0, safe_max)
@@ -1260,6 +1583,141 @@ func _emit_confirmed_melee_hit_event(attack_type: int, target_damageable_id: int
 		heavy_melee_hit.emit(target_damageable_id, damage)
 		return
 	light_melee_hit.emit(target_damageable_id, damage)
+
+
+func _item_has_use_action(item_data: Resource) -> bool:
+	if item_data == null:
+		return false
+	if not item_data.has_method("has_use_action"):
+		return false
+	var has_use_action_result: Variant = item_data.call("has_use_action")
+	if typeof(has_use_action_result) != TYPE_BOOL:
+		return false
+	return bool(has_use_action_result)
+
+
+func _apply_item_use_to_avatar(item_data: Resource) -> int:
+	if item_data == null:
+		return 0
+	if not item_data.has_method("apply_to_target"):
+		return 0
+	var applied_result: Variant = item_data.call("apply_to_target", self)
+	if typeof(applied_result) != TYPE_INT:
+		return 0
+	return maxi(int(applied_result), 0)
+
+
+func _item_should_consume_on_use(item_data: Resource) -> bool:
+	if item_data == null:
+		return false
+	if not _resource_has_property(item_data, "consume_on_use"):
+		return false
+	var consume_on_use_value: Variant = item_data.get("consume_on_use")
+	if typeof(consume_on_use_value) != TYPE_BOOL:
+		return false
+	return bool(consume_on_use_value)
+
+
+func _resolve_item_use_vfx_scene_path(item_data: Resource) -> String:
+	if item_data == null:
+		return ""
+	if not _resource_has_property(item_data, "use_vfx_scene"):
+		return ""
+	var use_vfx_scene_variant: Variant = item_data.get("use_vfx_scene")
+	if not (use_vfx_scene_variant is PackedScene):
+		return ""
+	var use_vfx_scene: PackedScene = use_vfx_scene_variant as PackedScene
+	if use_vfx_scene == null:
+		return ""
+	return String(use_vfx_scene.resource_path).strip_edges()
+
+
+func _resource_has_property(target_object: Object, property_name: String) -> bool:
+	if target_object == null:
+		return false
+	var property_list: Array[Dictionary] = target_object.get_property_list()
+	for property_entry in property_list:
+		var entry_name: String = String(property_entry.get("name", ""))
+		if entry_name == property_name:
+			return true
+	return false
+
+
+func _consume_inventory_slot_item(slot_index: int, quantity: int) -> bool:
+	if inventory == null:
+		return false
+	if quantity <= 0:
+		return false
+	var slot_data: Dictionary = inventory.get_slot(slot_index)
+	if slot_data.is_empty():
+		return false
+	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return false
+	var current_quantity: int = int(slot_data.get("quantity", 0))
+	if current_quantity <= 0:
+		return false
+	var new_quantity: int = current_quantity - quantity
+	if new_quantity <= 0:
+		return inventory.clear_slot(slot_index)
+	return inventory.set_slot(slot_index, item_data_path, new_quantity)
+
+
+func _play_item_use_vfx_by_scene_path(vfx_scene_path: String) -> void:
+	var normalized_scene_path: String = vfx_scene_path.strip_edges()
+	if normalized_scene_path.is_empty():
+		return
+	var loaded_scene: Resource = load(normalized_scene_path)
+	if not (loaded_scene is PackedScene):
+		return
+	var vfx_scene: PackedScene = loaded_scene as PackedScene
+	if vfx_scene == null:
+		return
+	if avatar_vfx != null and is_instance_valid(avatar_vfx):
+		avatar_vfx.play_heal_vfx(vfx_scene)
+		return
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return
+	var vfx_instance: Node = vfx_scene.instantiate()
+	current_scene.add_child(vfx_instance)
+	if vfx_instance is Node3D:
+		var node_3d: Node3D = vfx_instance as Node3D
+		if movement_body != null and is_instance_valid(movement_body):
+			node_3d.global_position = movement_body.global_position + Vector3.UP * 1.1
+		else:
+			node_3d.global_position = global_position + Vector3.UP * 1.1
+
+
+func _find_world_root() -> NeoWorld:
+	var current: Node = self
+	while current != null:
+		if current is NeoWorld:
+			return current as NeoWorld
+		current = current.get_parent()
+	return null
+
+
+func _resolve_drop_spawn_start_position() -> Vector3:
+	var base_position: Vector3 = global_position
+	if movement_body != null and is_instance_valid(movement_body):
+		base_position = movement_body.global_position
+	var forward: Vector3 = -global_basis.z
+	if forward.length_squared() <= 0.0001:
+		forward = Vector3.FORWARD
+	forward = forward.normalized()
+	return base_position + Vector3.UP * 1.1 + forward * 0.45
+
+
+func _resolve_drop_target_anchor_position() -> Vector3:
+	var base_position: Vector3 = global_position
+	if movement_body != null and is_instance_valid(movement_body):
+		base_position = movement_body.global_position
+	var forward: Vector3 = -global_basis.z
+	if forward.length_squared() <= 0.0001:
+		forward = Vector3.FORWARD
+	forward = forward.normalized()
+	return base_position + forward * 1.1
 
 
 func _find_damageable_by_id(target_damageable_id: int) -> Node:

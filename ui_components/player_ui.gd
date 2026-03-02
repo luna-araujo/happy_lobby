@@ -382,6 +382,14 @@ func close_loot_inventory() -> void:
 	_restore_mouse_after_loot_close()
 
 
+func get_active_loot_npc_id() -> int:
+	return _active_loot_npc_id
+
+
+func get_active_loot_chest_id() -> int:
+	return _active_loot_chest_id
+
+
 func set_interaction_prompt(text: String) -> void:
 	if _interaction_prompt_label != null:
 		_interaction_prompt_label.text = text
@@ -446,6 +454,12 @@ func _configure_inventory_ui() -> void:
 			_inventory_ui.external_drop_requested.connect(_on_inventory_external_drop_requested)
 		if not _inventory_ui.item_inspect_requested.is_connected(_on_item_inspect_requested):
 			_inventory_ui.item_inspect_requested.connect(_on_item_inspect_requested)
+		if not _inventory_ui.item_use_requested.is_connected(_on_item_use_requested):
+			_inventory_ui.item_use_requested.connect(_on_item_use_requested)
+		if not _inventory_ui.item_split_requested.is_connected(_on_item_split_requested):
+			_inventory_ui.item_split_requested.connect(_on_item_split_requested)
+		if not _inventory_ui.item_drop_requested.is_connected(_on_item_drop_requested):
+			_inventory_ui.item_drop_requested.connect(_on_item_drop_requested)
 	if _loot_inventory_ui != null:
 		_loot_inventory_ui.visible = false
 		_loot_inventory_ui.set_drag_permissions(true, false)
@@ -455,6 +469,12 @@ func _configure_inventory_ui() -> void:
 			_loot_inventory_ui.external_drop_requested.connect(_on_inventory_external_drop_requested)
 		if not _loot_inventory_ui.item_inspect_requested.is_connected(_on_item_inspect_requested):
 			_loot_inventory_ui.item_inspect_requested.connect(_on_item_inspect_requested)
+		if not _loot_inventory_ui.item_use_requested.is_connected(_on_item_use_requested):
+			_loot_inventory_ui.item_use_requested.connect(_on_item_use_requested)
+		if not _loot_inventory_ui.item_split_requested.is_connected(_on_item_split_requested):
+			_loot_inventory_ui.item_split_requested.connect(_on_item_split_requested)
+		if not _loot_inventory_ui.item_drop_requested.is_connected(_on_item_drop_requested):
+			_loot_inventory_ui.item_drop_requested.connect(_on_item_drop_requested)
 	_set_loot_inventory_close_button_visible(false)
 	if _inspector != null:
 		if not _inspector.inspect_target_avatar_selected.is_connected(_on_inspect_target_avatar_selected):
@@ -499,6 +519,66 @@ func _on_inventory_external_drop_requested(source_ui: InventoryUi, from_slot: in
 		if not _bound_avatar.has_method("request_chest_store"):
 			return
 		_bound_avatar.call("request_chest_store", _active_loot_chest_id, from_slot, to_slot)
+
+
+func _on_item_use_requested(slot_index: int, _item_data_path: String, _quantity: int) -> void:
+	if slot_index < 0:
+		return
+	if _bound_avatar == null or not is_instance_valid(_bound_avatar):
+		return
+	if not _bound_avatar.has_method("request_use_inventory_item"):
+		return
+	_bound_avatar.call("request_use_inventory_item", slot_index)
+
+
+func _on_item_drop_requested(source_ui: InventoryUi, slot_index: int, _item_data_path: String, quantity: int) -> void:
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+	if _bound_avatar == null or not is_instance_valid(_bound_avatar):
+		return
+	if source_ui == _inventory_ui:
+		if not _bound_avatar.has_method("request_drop_inventory_item"):
+			return
+		_bound_avatar.call("request_drop_inventory_item", slot_index, quantity)
+		return
+	if source_ui != _loot_inventory_ui:
+		return
+	if _active_loot_chest_id != -1:
+		if not _bound_avatar.has_method("request_drop_chest_item"):
+			return
+		_bound_avatar.call("request_drop_chest_item", _active_loot_chest_id, slot_index, quantity)
+		return
+	if _active_loot_npc_id > 0:
+		if not _bound_avatar.has_method("request_drop_npc_loot_item"):
+			return
+		_bound_avatar.call("request_drop_npc_loot_item", _active_loot_npc_id, slot_index, quantity)
+
+
+func _on_item_split_requested(source_ui: InventoryUi, slot_index: int, quantity: int) -> void:
+	if slot_index < 0:
+		return
+	if quantity <= 0:
+		return
+	if _bound_avatar == null or not is_instance_valid(_bound_avatar):
+		return
+	if source_ui == _inventory_ui:
+		if not _bound_avatar.has_method("request_split_inventory_item"):
+			return
+		_bound_avatar.call("request_split_inventory_item", slot_index, quantity)
+		return
+	if source_ui != _loot_inventory_ui:
+		return
+	if _active_loot_chest_id != -1:
+		if not _bound_avatar.has_method("request_split_chest_item"):
+			return
+		_bound_avatar.call("request_split_chest_item", _active_loot_chest_id, slot_index, quantity)
+		return
+	if _active_loot_npc_id > 0:
+		if not _bound_avatar.has_method("request_split_npc_loot_item"):
+			return
+		_bound_avatar.call("request_split_npc_loot_item", _active_loot_npc_id, slot_index, quantity)
 
 
 func _initialize_inspect_panel_state() -> void:
@@ -674,6 +754,14 @@ func _open_item_inspect_popup(item_data_path: String) -> void:
 			stats_lines.append("Damage: %d" % gun_item.fire_damage)
 			stats_lines.append("Fire Rate: %.2f/s" % gun_item.fire_rate_per_second)
 			stats_lines.append("Range: %.1f" % gun_item.max_shoot_distance)
+		elif base_item.has_method("has_use_action"):
+			var has_use_action_variant: Variant = base_item.call("has_use_action")
+			if typeof(has_use_action_variant) == TYPE_BOOL and bool(has_use_action_variant):
+				var heal_amount: int = _read_int_property(base_item, "heal_amount")
+				if heal_amount > 0:
+					stats_lines.append("Use: Heal %d HP" % heal_amount)
+				else:
+					stats_lines.append("Use: Available")
 	elif item_data != null:
 		var display_name_variant: Variant = item_data.get("display_name")
 		var candidate_name: String = String(display_name_variant).strip_edges()
@@ -740,3 +828,17 @@ func _format_rarity_label(raw_rarity: String) -> String:
 	if formatted_words.is_empty():
 		return "Common"
 	return " ".join(formatted_words)
+
+
+func _read_int_property(target_object: Object, property_name: String) -> int:
+	if target_object == null:
+		return 0
+	var properties: Array[Dictionary] = target_object.get_property_list()
+	for property_data in properties:
+		var current_name: String = String(property_data.get("name", ""))
+		if current_name != property_name:
+			continue
+		var property_value: Variant = target_object.get(property_name)
+		if typeof(property_value) == TYPE_INT:
+			return int(property_value)
+	return 0

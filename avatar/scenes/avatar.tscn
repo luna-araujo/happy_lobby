@@ -20,7 +20,7 @@
 [ext_resource type="PackedScene" path="res://avatar/effects/scenes/sample_hit_vfx.tscn" id="29_sample_hit_vfx"]
 [ext_resource type="Script" uid="uid://4tbj0g1uf5r4" path="res://avatar/scripts/avatar_gun_controller.gd" id="30_gun_controller"]
 [ext_resource type="Script" uid="uid://b5vjokkuhaa2o" path="res://avatar/scripts/avatar_crosshair_ui.gd" id="31_crosshair_ui"]
-[ext_resource type="Script" path="res://avatar/scripts/avatar_interaction_controller.gd" id="32_interaction_controller"]
+[ext_resource type="Script" uid="uid://cchy4i4swly3v" path="res://interaction/interactor.gd" id="32_interaction_controller"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_hob7b"]
 top_radius = 2.352
@@ -99,7 +99,7 @@ radius = 1.1713867
 height = 5.905945
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_quick_melee"]
-size = Vector3(2.2, 2.2, 2.8)
+size = Vector3(3.5, 6, 3.5)
 
 [node name="Avatar" unique_id=499552365 instance=ExtResource("1_bnsy6")]
 script = ExtResource("2_ko7hc")
@@ -172,7 +172,7 @@ script = ExtResource("21_v6bhq")
 height_offset = 3.0
 panel_size = Vector2i(320, 120)
 
-[node name="Armature" parent="." index="13" unique_id=193466125]
+[node name="Armature" parent="." index="13" unique_id=484606065]
 transform = Transform3D(-0.4, 0, -6.039832e-08, 0, 0.4, 0, 6.039832e-08, 0, -0.4, 0, 0, 0)
 script = ExtResource("3_hob7b")
 quick_melee_deceleration = 12.0
@@ -202,7 +202,7 @@ randomness = 0.35
 process_material = SubResource("ParticleProcessMaterial_fmcn2")
 draw_pass_1 = SubResource("BoxMesh_k2brx")
 
-[node name="Skeleton3D" parent="Armature" index="1" unique_id=1539049766]
+[node name="Skeleton3D" parent="Armature" index="1" unique_id=1450584744]
 modifier_callback_mode_process = 0
 animate_physical_bones = false
 bones/1/rotation = Quaternion(-5.279011e-07, 0.99984396, 0.01766862, -2.9873163e-05)
@@ -214,7 +214,7 @@ bones/3/rotation = Quaternion(-2.692575e-07, 0.9999594, 0.009011947, 2.9876604e-
 bones/4/position = Vector3(-1.355924, 1.7108427, 0.050023798)
 bones/4/scale = Vector3(1, 1.0000002, 1)
 
-[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=536188226]
+[node name="Avatar" parent="Armature/Skeleton3D" index="0" unique_id=1546055100]
 surface_material_override/0 = SubResource("ShaderMaterial_crnoc")
 surface_material_override/1 = SubResource("ShaderMaterial_2lqj0")
 
@@ -246,7 +246,7 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Armature/QuickMeleeHitbox" index="0" unique_id=635215704]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9099154e-07, 3.3000002, 2.672422)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9099154e-07, 3.1885777, 2.672422)
 shape = SubResource("BoxShape3D_quick_melee")
 debug_color = Color(0.9647059, 0.14901961, 0.3137255, 0.41960785)
 
@@ -254,7 +254,7 @@ debug_color = Color(0.9647059, 0.14901961, 0.3137255, 0.41960785)
 tree_root = ExtResource("14_s4lrm")
 parameters/Locomotion/blend_position = 0.0
 
-[node name="AnimationPlayer" parent="." index="15" unique_id=520659362]
+[node name="AnimationPlayer" parent="." index="15" unique_id=33015138]
 autoplay = &"idle"
 script = ExtResource("7_acn83")
 jump_takeoff_squash = 0.02

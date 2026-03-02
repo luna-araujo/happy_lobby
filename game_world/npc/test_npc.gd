@@ -230,6 +230,80 @@ func try_loot_transfer_to_player(player_peer_id: int, from_slot: int, _preferred
 	return true
 
 
+func try_drop_loot_slot_to_world(player_peer_id: int, from_slot: int, quantity: int = 1) -> bool:
+	if not multiplayer.is_server():
+		return false
+	if quantity <= 0:
+		return false
+	if not can_be_looted_by(player_peer_id, loot_interaction_range):
+		return false
+	if inventory == null:
+		return false
+
+	var source_slot: Dictionary = inventory.get_slot(from_slot)
+	if source_slot.is_empty():
+		return false
+	var item_data_path: String = String(source_slot.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return false
+	var source_quantity: int = int(source_slot.get("quantity", 0))
+	if source_quantity <= 0:
+		return false
+
+	var world_node: Node = _find_world_root()
+	if not (world_node is NeoWorld):
+		return false
+	var world: NeoWorld = world_node as NeoWorld
+	var drop_quantity: int = mini(quantity, source_quantity)
+	if drop_quantity <= 0:
+		return false
+	var drop_start_position: Vector3 = global_position + Vector3.UP * 0.9
+	var remaining_quantity: int = source_quantity - drop_quantity
+	if remaining_quantity <= 0:
+		inventory.clear_slot(from_slot)
+	else:
+		inventory.set_slot(from_slot, item_data_path, remaining_quantity)
+
+	var spawned_item: DroppedItem = world.spawn_dropped_item(
+		item_data_path,
+		drop_quantity,
+		drop_start_position,
+		global_position
+	)
+	if spawned_item == null:
+		inventory.set_slot(from_slot, item_data_path, source_quantity)
+		return false
+	if _is_inventory_empty():
+		_despawn_corpse()
+	return true
+
+
+func try_split_loot_slot(player_peer_id: int, from_slot: int, quantity: int = 1) -> bool:
+	if not multiplayer.is_server():
+		return false
+	if quantity <= 0:
+		return false
+	if not can_be_looted_by(player_peer_id, loot_interaction_range):
+		return false
+	if inventory == null:
+		return false
+
+	var source_slot: Dictionary = inventory.get_slot(from_slot)
+	if source_slot.is_empty():
+		return false
+	var source_quantity: int = int(source_slot.get("quantity", 0))
+	if source_quantity <= 1:
+		return false
+	var split_quantity: int = clampi(quantity, 1, source_quantity - 1)
+	if split_quantity <= 0:
+		return false
+
+	var to_slot: int = inventory.find_first_empty_slot()
+	if to_slot >= 0 and inventory.split_stack(from_slot, to_slot, split_quantity):
+		return true
+	return try_drop_loot_slot_to_world(player_peer_id, from_slot, split_quantity)
+
+
 func _update_wander_motion(delta: float) -> void:
 	if combat == null:
 		return

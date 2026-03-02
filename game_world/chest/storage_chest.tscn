@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://inventory/scripts/inventory.gd" id="2_inventory_script"]
 [ext_resource type="Script" path="res://game_world/chest/storage_chest_state_sync.gd" id="3_sync_script"]
 [ext_resource type="Texture2D" path="res://assets/props/chest/chest-yellow.png" id="4_chest_icon"]
+[ext_resource type="Script" path="res://game_world/chest/storage_chest_interaction_area.gd" id="5_interaction_area"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_chest_body"]
 size = Vector3(1.0, 0.8, 0.8)
@@ -15,6 +16,9 @@ roughness = 0.95
 [sub_resource type="BoxMesh" id="BoxMesh_chest"]
 material = SubResource("StandardMaterial3D_chest")
 size = Vector3(1.0, 0.8, 0.8)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interaction"]
+radius = 2.5
 
 [node name="StorageChest" type="StaticBody3D" groups=["StorageChest"]]
 script = ExtResource("1_chest_script")
@@ -33,6 +37,14 @@ pixel_size = 0.01
 texture = ExtResource("4_chest_icon")
 billboard = 1
 no_depth_test = true
+
+[node name="InteractionArea" type="Area3D" parent="."]
+script = ExtResource("5_interaction_area")
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea"]
+shape = SubResource("SphereShape3D_interaction")
 
 [node name="Inventory" type="Node" parent="."]
 script = ExtResource("2_inventory_script")

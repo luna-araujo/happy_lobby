@@ -9,6 +9,7 @@ var icon: Texture2D
 var show_quantity: bool = true
 var empty_slot_text: String = "Empty"
 var _slot_size: Vector2 = Vector2(72.0, 72.0)
+var _active_drag_payload: Dictionary = {}
 
 
 func configure(
@@ -66,10 +67,11 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	if preview != null:
 		set_drag_preview(preview)
 
-	return {
+	_active_drag_payload = {
 		"source_ui": owner_ui,
 		"from_slot": slot_index
 	}
+	return _active_drag_payload
 
 
 func _can_drop_data(_position: Vector2, data: Variant) -> bool:
@@ -91,6 +93,21 @@ func _drop_data(_position: Vector2, data: Variant) -> void:
 	var payload: Dictionary = data as Dictionary
 	if owner_ui.has_method("handle_drop_payload"):
 		owner_ui.call("handle_drop_payload", payload, slot_index)
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_DRAG_END:
+		return
+	if _active_drag_payload.is_empty():
+		return
+	var payload: Dictionary = _active_drag_payload.duplicate(true)
+	_active_drag_payload.clear()
+	if is_drag_successful():
+		return
+	if owner_ui == null:
+		return
+	if owner_ui.has_method("handle_failed_drag_payload"):
+		owner_ui.call("handle_failed_drag_payload", payload)
 
 
 func _build_drag_preview() -> Control:
@@ -159,34 +176,39 @@ func _rebuild_contents() -> void:
 			empty_label.text = "[%d] %s" % [slot_index, empty_slot_text]
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		empty_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		empty_label.clip_text = true
 		root_vbox.add_child(empty_label)
 		return
 
 	if icon != null:
 		var icon_rect: TextureRect = TextureRect.new()
-		icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_rect.texture = icon
 		var slot_icon_size: float = maxf(minf(_slot_size.x, _slot_size.y) - 16.0, 24.0)
 		icon_rect.custom_minimum_size = Vector2(slot_icon_size, slot_icon_size)
+		icon_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		root_vbox.add_child(icon_rect)
 	else:
 		var text_label: Label = Label.new()
 		text_label.text = display_name
 		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		text_label.clip_text = true
 		root_vbox.add_child(text_label)
 
 	var footer_label: Label = Label.new()
 	var quantity: int = int(slot_data.get("quantity", 0))
 	var quantity_text: String = "x%d" % maxi(quantity, 0)
 	if show_quantity:
-		footer_label.text = "%s %s" % [display_name, quantity_text] if icon != null else quantity_text
+		footer_label.text = quantity_text
 	else:
 		footer_label.text = display_name if icon != null else ""
 	footer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	footer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	footer_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	footer_label.clip_text = true
 	root_vbox.add_child(footer_label)

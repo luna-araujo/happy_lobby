@@ -2,6 +2,8 @@ class_name InventoryUi
 extends Control
 
 signal item_use_requested(slot_index: int, item_data_path: String, quantity: int)
+signal item_drop_requested(source_ui: InventoryUi, slot_index: int, item_data_path: String, quantity: int)
+signal item_split_requested(source_ui: InventoryUi, slot_index: int, quantity: int)
 signal external_drop_requested(source_ui: InventoryUi, from_slot: int, target_ui: InventoryUi, to_slot: int)
 signal gun_slot_drop_requested(from_slot: int)
 signal gun_slot_unequip_requested
@@ -36,6 +38,7 @@ const CONTEXT_USE: int = 0
 const CONTEXT_DROP: int = 1
 const CONTEXT_EQUIP: int = 2
 const CONTEXT_INSPECT: int = 3
+const CONTEXT_SPLIT: int = 4
 
 
 func _ready() -> void:
@@ -262,13 +265,20 @@ func open_context_menu(slot_index: int) -> void:
 	if slot_data.is_empty():
 		return
 	var item_data_path: String = String(slot_data.get("item_data_path", "")).strip_edges()
+	var quantity: int = int(slot_data.get("quantity", 0))
 	var item_data: Resource = _resolve_item_data(item_data_path)
 	var is_gun_item: bool = item_data is GunItemData
+	var has_use_action: bool = _item_has_use_action(item_data)
+	var can_split_stack: bool = _can_split_stack(slot_index, quantity)
 	_context_slot_index = slot_index
 	_context_menu.clear()
+	if not is_read_only and is_player_inventory and has_use_action:
+		_context_menu.add_item("Use", CONTEXT_USE)
 	if not is_read_only and is_gun_item and _avatar_inventory != null and gun_slot_interactive:
 		_context_menu.add_item("Equip", CONTEXT_EQUIP)
 	_context_menu.add_item("Inspect", CONTEXT_INSPECT)
+	if not is_read_only and can_split_stack:
+		_context_menu.add_item("Split", CONTEXT_SPLIT)
 	if not is_read_only:
 		_context_menu.add_item("Drop", CONTEXT_DROP)
 	var screen_pos: Vector2i = DisplayServer.mouse_get_position()
@@ -361,6 +371,35 @@ func handle_drop_payload(payload: Dictionary, to_slot: int) -> void:
 	external_drop_requested.emit(source_ui, from_slot, self, to_slot)
 
 
+func handle_failed_drag_payload(payload: Dictionary) -> void:
+	if typeof(payload) != TYPE_DICTIONARY:
+		return
+	if not payload.has("source_ui") or not payload.has("from_slot"):
+		return
+	var source_variant: Variant = payload.get("source_ui")
+	if not (source_variant is InventoryUi):
+		return
+	var source_ui: InventoryUi = source_variant as InventoryUi
+	if source_ui == null:
+		return
+	if not source_ui.allow_drag_out:
+		return
+	if source_ui.is_read_only:
+		return
+	if source_ui._inventory == null:
+		return
+	var from_slot: int = int(payload.get("from_slot", -1))
+	if from_slot < 0:
+		return
+	var source_slot: Dictionary = source_ui._inventory.get_slot(from_slot)
+	if source_slot.is_empty():
+		return
+	var item_data_path: String = String(source_slot.get("item_data_path", "")).strip_edges()
+	if item_data_path.is_empty():
+		return
+	item_drop_requested.emit(source_ui, from_slot, item_data_path, 1)
+
+
 func handle_special_slot_right_click(slot_index: int) -> void:
 	if slot_index != -1:
 		return
@@ -420,11 +459,58 @@ func _on_context_action_selected(action_id: int) -> void:
 		CONTEXT_USE:
 			if is_read_only:
 				return
+			if not is_player_inventory:
+				return
+			var resolved_item_data_path: String = item_data_path.strip_edges()
+			if resolved_item_data_path.is_empty():
+				return
+			var item_data: Resource = _resolve_item_data(resolved_item_data_path)
+			if not _item_has_use_action(item_data):
+				return
 			item_use_requested.emit(_context_slot_index, item_data_path, quantity)
 		CONTEXT_DROP:
 			if is_read_only:
 				return
-			_inventory.try_drop_item(item_data_path, 1)
+			var resolved_item_data_path: String = item_data_path.strip_edges()
+			if resolved_item_data_path.is_empty():
+				return
+			item_drop_requested.emit(self, _context_slot_index, resolved_item_data_path, 1)
+		CONTEXT_SPLIT:
+			if is_read_only:
+				return
+			if quantity <= 1:
+				return
+			var split_quantity: int = _resolve_default_split_quantity(quantity)
+			if split_quantity <= 0:
+				return
+			item_split_requested.emit(self, _context_slot_index, split_quantity)
+
+
+func _item_has_use_action(item_data: Resource) -> bool:
+	if item_data == null:
+		return false
+	if not item_data.has_method("has_use_action"):
+		return false
+	var has_use_variant: Variant = item_data.call("has_use_action")
+	if typeof(has_use_variant) != TYPE_BOOL:
+		return false
+	return bool(has_use_variant)
+
+
+func _can_split_stack(slot_index: int, quantity: int) -> bool:
+	if _inventory == null:
+		return false
+	if slot_index < 0:
+		return false
+	if quantity <= 1:
+		return false
+	return _resolve_default_split_quantity(quantity) > 0
+
+
+func _resolve_default_split_quantity(stack_quantity: int) -> int:
+	if stack_quantity <= 1:
+		return 0
+	return maxi(stack_quantity / 2, 1)
 
 
 func _refresh_title() -> void:

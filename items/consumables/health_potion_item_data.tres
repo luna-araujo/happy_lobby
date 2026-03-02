@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ConsumableItemData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://items/consumable_item_data.gd" id="1_consumable_script"]
+[ext_resource type="PackedScene" path="res://game_world/effects/heal_vfx.tscn" id="2_heal_vfx_scene"]
+[ext_resource type="Texture2D" path="res://assets/items/health_potion_icon.png" id="3_potion_icon"]
+
+[resource]
+script = ExtResource("1_consumable_script")
+item_id = "items.health_potion"
+display_name = "Health Potion"
+description = "A restorative potion that heals 50 HP when used."
+rarity = "common"
+icon = ExtResource("3_potion_icon")
+max_stack = 20
+tags = PackedStringArray("consumable", "potion", "healing")
+heal_amount = 50
+consume_on_use = true
+use_vfx_scene = ExtResource("2_heal_vfx_scene")

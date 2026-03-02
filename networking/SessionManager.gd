@@ -127,6 +127,7 @@ func _on_peer_connected(id: int) -> void:
 		# Sync all existing players to the newly connected client
 		game_world.sync_existing_players()
 		game_world.sync_existing_test_npcs_to_peer(id)
+		game_world.sync_existing_dropped_items_to_peer(id)
 		game_world.call_deferred("sync_customizations_to_peer", id)
 	else:
 		var username := "Player_%d" % id

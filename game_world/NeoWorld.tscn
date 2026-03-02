@@ -92,12 +92,18 @@ mesh = SubResource("WallMesh_neo")
 
 [node name="SharedChest" parent="Sandbox" instance=ExtResource("2_chest_scene")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.4, -3.0)
-seed_item_data_paths = PackedStringArray("res://items/beretta/beretta_item_data.tres", "res://items/beretta/beretta_item_data.tres", "res://items/beretta/beretta_item_data.tres")
+seed_item_data_paths = PackedStringArray("res://items/beretta/beretta_item_data.tres")
+seed_item_quantities = {
+"res://items/consumables/health_potion_item_data.tres": 99
+}
 
 [node name="PlayerCharacters" type="Node3D" parent="." unique_id=321150875]
 unique_name_in_owner = true
 
 [node name="TestNpcs" type="Node3D" parent="." unique_id=1298475613]
+unique_name_in_owner = true
+
+[node name="DroppedItems" type="Node3D" parent="." unique_id=1049285761]
 unique_name_in_owner = true
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=232581419]

@@ -2,15 +2,13 @@
 
 [ext_resource type="Script" uid="uid://c3nqm1te3nhad" path="res://ui_components/player_ui.gd" id="1_player_ui_script"]
 [ext_resource type="PackedScene" uid="uid://bkavmofn8itgd" path="res://inventory/inventory_ui.tscn" id="2_inventory_ui_scene"]
-[ext_resource type="Script" uid="uid://m81riugpmtps" path="res://ui_components/player_ui_inspector.gd" id="3_player_ui_inspector"]
+[ext_resource type="Script" path="res://ui_components/player_ui_inspector.gd" id="3_player_ui_inspector"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kd2um"]
 bg_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ckh35"]
 bg_color = Color(0.8788839, 0, 0.27403352, 1)
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kd2um"]
 
 [node name="PlayerUI" type="CanvasLayer" unique_id=2134681793 groups=["player_ui"]]
 script = ExtResource("1_player_ui_script")
@@ -91,9 +89,9 @@ anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 offset_left = -427.0
-offset_top = -560.0
+offset_top = -662.0
 offset_right = -23.0
-offset_bottom = -296.0
+offset_bottom = -398.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -105,14 +103,15 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -52.0
-offset_top = -576.0
+offset_top = -676.0
 offset_right = -8.0
-offset_bottom = -545.0
+offset_bottom = -645.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "X"
 
 [node name="InteractionPrompt" type="PanelContainer" parent="Root" unique_id=414090335]
+self_modulate = Color(1, 1, 1, 0.21176471)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -125,7 +124,6 @@ offset_right = 327.0
 offset_bottom = 22.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_kd2um")
 
 [node name="Margin" type="MarginContainer" parent="Root/InteractionPrompt" unique_id=1640830581]
 layout_mode = 2

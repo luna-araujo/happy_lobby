@@ -6,10 +6,14 @@
 [ext_resource type="Script" uid="uid://befkpl4atq0v8" path="res://avatar/scripts/avatar_healthbar.gd" id="4_healthbar"]
 [ext_resource type="Script" uid="uid://cdj2q6d1yuqw0" path="res://game_world/npc/test_npc_state_sync.gd" id="5_sync"]
 [ext_resource type="Script" uid="uid://c6slcpu1wo7bh" path="res://inventory/scripts/inventory.gd" id="6_inventory"]
+[ext_resource type="Script" path="res://game_world/npc/test_npc_interaction_area.gd" id="7_interaction_area"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_npc"]
 radius = 0.38134766
 height = 0.7626953
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interaction"]
+radius = 2.5
 
 [node name="TestNpc" type="CharacterBody3D" unique_id=508771721]
 script = ExtResource("1_npc")
@@ -17,6 +21,14 @@ script = ExtResource("1_npc")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1627228668]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3913874, 0)
 shape = SubResource("CapsuleShape3D_npc")
+
+[node name="InteractionArea" type="Area3D" parent="."]
+script = ExtResource("7_interaction_area")
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea"]
+shape = SubResource("SphereShape3D_interaction")
 
 [node name="DuckModel" parent="." unique_id=1053403266 instance=ExtResource("2_duck")]
 transform = Transform3D(0.48, 0, 0, 0, 0.48, 0, 0, 0, 0.48, 0, -0.05017213, 0)
