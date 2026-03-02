@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://cfloiyh8ohrpl" path="res://ui_components/find_lobby_button.gd" id="2_h2yge"]
 [ext_resource type="Script" uid="uid://7tktn8vrf1qv" path="res://ui_components/create_lobby_button.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://dodf3ilr5rpv6" path="res://ui_components/join_lobby_button.gd" id="3_lquwl"]
+[ext_resource type="Script" path="res://ui_components/main_menu_version_label.gd" id="4_version_label"]
 [ext_resource type="PackedScene" uid="uid://da6np2odmdu88" path="res://game_world/NeoWorld.tscn" id="6_7mycd"]
 [ext_resource type="PackedScene" uid="uid://dbi6jduedmmsd" path="res://ui_components/player_ui.tscn" id="7_player_ui"]
 
@@ -70,6 +71,20 @@ script = ExtResource("3_lquwl")
 layout_mode = 2
 text = "Create Lobby"
 script = ExtResource("3_1bvp3")
+
+[node name="VersionLabel" type="Label" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -224.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 40.0
+grow_horizontal = 0
+horizontal_alignment = 2
+text = "Version"
+script = ExtResource("4_version_label")
 
 [node name="NeoWorld" parent="." unique_id=462384816 instance=ExtResource("6_7mycd")]
 
