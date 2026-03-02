@@ -5,3 +5,4 @@
 
 .exports/
 dist/
+*.tscn*.tmp
